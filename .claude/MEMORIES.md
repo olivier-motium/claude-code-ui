@@ -96,6 +96,18 @@ This approach was chosen over:
 - Direct kitty.conf modification: Risky, could break user config
 - --override flags: Only work for terminal-launched kitty
 
+### Session Resume via Kitty
+"Open in kitty" runs `claude --resume <sessionId> --dangerously-skip-permissions`:
+- `--resume` continues the exact Claude Code session from its log file
+- `--dangerously-skip-permissions` skips the folder trust prompt (user controls which sessions to open)
+- Session IDs from our JSONL filenames match Claude Code's internal format
+
+### Entry Limit to Prevent Memory Leaks
+Sessions can have thousands of log entries over time. Without trimming, memory grows unbounded causing OOM kills (exit 137). Solution: `MAX_ENTRIES_PER_SESSION = 500` in config.ts, trimmed in watcher.ts. This is sufficient for status detection and summarization while preventing memory exhaustion.
+
+### StreamDB Corruption Recovery
+If durable-streams client shows `Symbol(liveQueryInternal)` errors, the stream data may be corrupted. Fix: backup and clear `~/.claude-code-ui/streams/`, restart daemon. The stream will rebuild from session files.
+
 ## Known Issues
 
 ### Pre-existing Test Failures

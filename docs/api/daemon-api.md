@@ -365,8 +365,11 @@ const windowId = await kitty.launchTab({
   cwd: "/path/to/project",
   tabTitle: "Session Tab",
   vars: { cc_session_id: "abc123" },
+  command: ["claude", "--resume", "abc123"],
 });
 ```
+
+The `command` option allows running a command in the new tab (e.g., resuming a Claude Code session).
 
 #### `sendText(windowId: number, text: string, submit: boolean): Promise<void>`
 
@@ -488,6 +491,9 @@ curl -X POST http://127.0.0.1:4451/api/kitty/setup
 ```
 
 **Open session terminal:**
+
+Opens a new kitty tab and resumes the Claude Code session using `claude --resume <sessionId> --dangerously-skip-permissions`.
+
 ```bash
 curl -X POST http://127.0.0.1:4451/api/sessions/abc123/open
 # { "success": true, "windowId": 42, "created": true }

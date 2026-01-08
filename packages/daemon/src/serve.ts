@@ -52,6 +52,17 @@ function isRecentSession(session: SessionState): boolean {
 }
 
 async function main(): Promise<void> {
+  // Global error handlers to prevent silent crashes
+  process.on('unhandledRejection', (reason) => {
+    console.error(`${colors.red}[FATAL]${colors.reset} Unhandled Rejection:`, reason);
+    // Don't exit - log and continue to keep daemon running
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error(`${colors.red}[FATAL]${colors.reset} Uncaught Exception:`, error);
+    process.exit(1);  // Exit cleanly on uncaught exceptions
+  });
+
   console.log(`${colors.bold}Claude Code Session Daemon${colors.reset}`);
   console.log(`${colors.dim}Showing sessions from last ${MAX_AGE_HOURS} hours${colors.reset}`);
   console.log();
@@ -101,6 +112,7 @@ async function main(): Promise<void> {
       linkRepo,
       streamServer,
       getSession: (id) => watcher.getSessions().get(id),
+      getAllSessions: () => watcher.getSessions(),
     })
   );
 
@@ -156,15 +168,26 @@ async function main(): Promise<void> {
     console.error(`${colors.yellow}[ERROR]${colors.reset}`, error.message);
   });
 
-  // Handle shutdown
+  // Handle shutdown with timeout to prevent hangs
   process.on("SIGINT", async () => {
     console.log();
     console.log(`${colors.dim}Shutting down...${colors.reset}`);
-    watcher.stop();
-    apiServer.close();
-    closeDb();
-    await streamServer.stop();
-    process.exit(0);
+
+    // Set a shutdown timeout to force exit if cleanup hangs
+    const shutdownTimeout = setTimeout(() => {
+      console.error(`${colors.yellow}[WARN]${colors.reset} Shutdown timed out, forcing exit`);
+      process.exit(1);
+    }, 5000);
+
+    try {
+      watcher.stop();
+      apiServer.close();
+      closeDb();
+      await streamServer.stop();
+    } finally {
+      clearTimeout(shutdownTimeout);
+      process.exit(0);
+    }
   });
 
   // Start watching

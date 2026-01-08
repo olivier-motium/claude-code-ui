@@ -39,6 +39,8 @@ export interface LaunchOptions {
   tabTitle?: string;
   windowTitle?: string;
   vars?: Record<string, string>;
+  /** Command to execute in the new tab (e.g., ["claude", "--resume", "abc123"]) */
+  command?: string[];
 }
 
 /**
@@ -126,6 +128,11 @@ export class KittyRc {
       }
     }
 
+    // Add command to run in the new tab
+    if (opts.command && opts.command.length > 0) {
+      args.push(...opts.command);
+    }
+
     const { stdout } = await withTimeout(
       execFileAsync("kitten", args),
       KITTY_COMMAND_TIMEOUT_MS
@@ -150,7 +157,7 @@ export class KittyRc {
       "--stdin",
     ];
 
-    const payload = submit ? text + "\r" : text;
+    const payload = submit ? text + "\n" : text;
 
     await withTimeout(
       new Promise<void>((resolve, reject) => {

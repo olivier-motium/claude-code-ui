@@ -9,6 +9,7 @@ import {
 import { deriveStatus, statusChanged } from "./status.js";
 import { getGitInfoCached, type GitInfo } from "./git.js";
 import type { LogEntry, SessionMetadata, StatusResult } from "./types.js";
+import { MAX_ENTRIES_PER_SESSION } from "./config.js";
 
 const CLAUDE_PROJECTS_DIR = `${process.env.HOME}/.claude/projects`;
 
@@ -169,10 +170,15 @@ export class SessionWatcher extends EventEmitter {
         return; // No new data
       }
 
-      // Combine with existing entries
-      const allEntries = existingSession
+      // Combine with existing entries, trimming to prevent memory leaks
+      const combinedEntries = existingSession
         ? [...existingSession.entries, ...newEntries]
         : newEntries;
+
+      // Trim to last N entries to prevent unbounded memory growth
+      const allEntries = combinedEntries.length > MAX_ENTRIES_PER_SESSION
+        ? combinedEntries.slice(-MAX_ENTRIES_PER_SESSION)
+        : combinedEntries;
 
       // Extract metadata for new sessions
       const metadata = existingSession

@@ -77,6 +77,13 @@ export const PENDING_TOOL_BONUS = 30;
 export const DECAY_HALF_LIFE_MINUTES = 30;
 
 // =============================================================================
+// Session Entry Limits
+// =============================================================================
+
+/** Maximum entries to keep per session (prevents memory leaks) */
+export const MAX_ENTRIES_PER_SESSION = 500;
+
+// =============================================================================
 // Session Age Configuration
 // =============================================================================
 

@@ -35,6 +35,8 @@ export class StreamServer {
   private sessionCache = new Map<string, SessionState>();
   // Terminal link repository for lookups
   private linkRepo: TerminalLinkRepo;
+  // Flag to prevent race conditions during shutdown
+  private stopping = false;
 
   constructor(options: StreamServerOptions = {}) {
     this.linkRepo = new TerminalLinkRepo();
@@ -82,6 +84,7 @@ export class StreamServer {
   }
 
   async stop(): Promise<void> {
+    this.stopping = true;  // Prevent new publishes during shutdown
     stopAllPolling();
     await this.server.stop();
     this.stream = null;
@@ -95,8 +98,9 @@ export class StreamServer {
    * Convert SessionState to Session schema and publish to stream
    */
   async publishSession(sessionState: SessionState, operation: "insert" | "update" | "delete"): Promise<void> {
-    if (!this.stream) {
-      throw new Error("Server not started");
+    // Skip publishing during shutdown or if stream is not ready
+    if (this.stopping || !this.stream) {
+      return;
     }
 
     // Cache session state for PR update callbacks
@@ -170,8 +174,9 @@ export class StreamServer {
    * Publish session with updated PR info (called from PR update callback)
    */
   async publishSessionWithPR(sessionState: SessionState, pr: PRInfo | null): Promise<void> {
-    if (!this.stream) {
-      throw new Error("Server not started");
+    // Skip publishing during shutdown or if stream is not ready
+    if (this.stopping || !this.stream) {
+      return;
     }
 
     // Generate AI goal and summary
@@ -220,8 +225,9 @@ export class StreamServer {
     sessionId: string,
     terminalLink: TerminalLink | null
   ): Promise<void> {
-    if (!this.stream) {
-      throw new Error("Server not started");
+    // Skip publishing during shutdown or if stream is not ready
+    if (this.stopping || !this.stream) {
+      return;
     }
 
     const sessionState = this.sessionCache.get(sessionId);

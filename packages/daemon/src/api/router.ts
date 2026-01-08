@@ -19,6 +19,7 @@ interface RouterDependencies {
   linkRepo: TerminalLinkRepo;
   streamServer: StreamServer;
   getSession: (id: string) => SessionState | undefined;
+  getAllSessions?: () => Map<string, SessionState>;
 }
 
 /**
@@ -28,11 +29,22 @@ export function createApiRouter(deps: RouterDependencies) {
   const { kittyRc, linkRepo, streamServer, getSession } = deps;
   const api = new Hono();
 
-  // Enable CORS for UI
+  // Enable CORS for UI (allow any localhost port)
   api.use(
     "*",
     cors({
-      origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+      origin: (origin) => {
+        if (!origin) return origin;
+        try {
+          const url = new URL(origin);
+          if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+            return origin;  // Return the origin string to allow it
+          }
+          return null;  // Reject non-localhost origins
+        } catch {
+          return null;
+        }
+      },
       credentials: true,
     })
   );
@@ -43,6 +55,29 @@ export function createApiRouter(deps: RouterDependencies) {
     return c.json({
       available: details.socketReachable,
       details,
+    });
+  });
+
+  // Debug: list all sessions known to the watcher
+  api.get("/debug/sessions", (c) => {
+    if (!deps.getAllSessions) {
+      return c.json({
+        message: "getAllSessions not available",
+        hint: "Check daemon console logs for '[API] Session X not found'",
+      });
+    }
+
+    const allSessions = deps.getAllSessions();
+    const sessions = Array.from(allSessions.values()).map((s) => ({
+      id: s.sessionId,
+      status: s.status.status,
+      cwd: s.cwd,
+      lastActivityAt: s.status.lastActivityAt,
+    }));
+
+    return c.json({
+      total: sessions.length,
+      sessions: sessions.slice(0, 50), // Limit to 50 for readability
     });
   });
 
@@ -75,46 +110,66 @@ export function createApiRouter(deps: RouterDependencies) {
   // Focus or create terminal
   api.post("/sessions/:id/open", async (c) => {
     const sessionId = c.req.param("id");
+    const allSessions = deps.getAllSessions?.();
+    console.log(`[API] /open called for session ${sessionId.slice(0, 8)}, watcher has ${allSessions?.size ?? 0} sessions`);
+
     const session = getSession(sessionId);
 
     if (!session) {
+      // Log available sessions to help diagnose why this session wasn't found
+      const available = [...(allSessions?.keys() ?? [])].slice(0, 10).map(k => k.slice(0, 8)).join(', ');
+      console.log(`[API] Session ${sessionId.slice(0, 8)} NOT FOUND. Available (first 10): ${available || 'none'}`);
       return c.json({ error: "Session not found" }, 404);
     }
+
+    console.log(`[API] Session found: status=${session.status.status}, cwd=${session.cwd}`);
 
     // Try existing link first
     const existingLink = linkRepo.get(sessionId);
     if (existingLink && !existingLink.stale) {
+      console.log(`[API] Trying existing link: windowId=${existingLink.kittyWindowId}`);
       const success = await kittyRc.focusWindow(existingLink.kittyWindowId);
       if (success) {
         return c.json({ success: true, windowId: existingLink.kittyWindowId });
       }
       // Mark stale and continue to create new
+      console.log(`[API] Existing link failed, marking stale`);
       linkRepo.markStale(sessionId);
     }
 
-    // Create new tab
-    const dirName = session.cwd.split("/").pop() || session.cwd;
-    const windowId = await kittyRc.launchTab({
-      cwd: session.cwd,
-      tabTitle: `${dirName} • ${sessionId.slice(0, 8)}`,
-      vars: { cc_session_id: sessionId },
-    });
+    // Create new tab with claude --resume to continue the session
+    try {
+      const dirName = session.cwd.split("/").pop() || session.cwd;
+      console.log(`[API] Launching new tab for ${dirName}`);
+      const windowId = await kittyRc.launchTab({
+        cwd: session.cwd,
+        tabTitle: `${dirName} • ${sessionId.slice(0, 8)}`,
+        vars: { cc_session_id: sessionId },
+        command: ["claude", "--resume", sessionId, "--dangerously-skip-permissions"],
+      });
 
-    const link: TerminalLink = {
-      sessionId,
-      kittyWindowId: windowId,
-      linkedAt: new Date().toISOString(),
-      stale: false,
-      repoPath: session.cwd,
-      createdVia: "auto_open",
-    };
-    linkRepo.upsert(link);
-    await publishLinkUpdate(streamServer, sessionId, link);
+      console.log(`[API] Tab launched: windowId=${windowId}`);
 
-    // Focus the new window
-    await kittyRc.focusWindow(windowId);
+      const link: TerminalLink = {
+        sessionId,
+        kittyWindowId: windowId,
+        linkedAt: new Date().toISOString(),
+        stale: false,
+        repoPath: session.cwd,
+        createdVia: "auto_open",
+      };
+      linkRepo.upsert(link);
+      await publishLinkUpdate(streamServer, sessionId, link);
 
-    return c.json({ success: true, windowId, created: true });
+      // Focus the new window
+      await kittyRc.focusWindow(windowId);
+
+      return c.json({ success: true, windowId, created: true });
+    } catch (err) {
+      console.error(`[API] Failed to launch tab:`, err);
+      const message = err instanceof Error ? err.message : "Failed to launch terminal";
+      return c.json({ error: message }, 500);
+    }
   });
 
   // Link existing terminal via interactive select
