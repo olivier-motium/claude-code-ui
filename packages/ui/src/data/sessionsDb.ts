@@ -3,14 +3,16 @@ import { sessionsStateSchema } from "./schema";
 
 const STREAM_URL = "http://127.0.0.1:4450/sessions";
 
-let dbInstance: StreamDB<typeof sessionsStateSchema> | null = null;
-let dbPromise: Promise<StreamDB<typeof sessionsStateSchema>> | null = null;
+export type SessionsDB = StreamDB<typeof sessionsStateSchema>;
+
+let dbInstance: SessionsDB | null = null;
+let dbPromise: Promise<SessionsDB> | null = null;
 
 /**
  * Get or create the sessions StreamDB instance.
- * Handles lazy initialization and preloading.
+ * Call this in a route loader to ensure db is ready before render.
  */
-export async function getSessionsDb(): Promise<StreamDB<typeof sessionsStateSchema>> {
+export async function getSessionsDb(): Promise<SessionsDB> {
   if (dbInstance) {
     return dbInstance;
   }
@@ -34,6 +36,18 @@ export async function getSessionsDb(): Promise<StreamDB<typeof sessionsStateSche
   }
 
   return dbPromise;
+}
+
+/**
+ * Get the db instance synchronously.
+ * Only call this after getSessionsDb() has resolved (e.g., after loader).
+ * Throws if db is not initialized.
+ */
+export function getSessionsDbSync(): SessionsDB {
+  if (!dbInstance) {
+    throw new Error("SessionsDB not initialized. Call getSessionsDb() first in a loader.");
+  }
+  return dbInstance;
 }
 
 /**

@@ -1,50 +1,19 @@
-import { useState, useEffect } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
-import { getSessionsDb } from "../data/sessionsDb";
+import { getSessionsDbSync } from "../data/sessionsDb";
 import type { Session } from "../data/schema";
-import type { StreamDB } from "@durable-streams/state";
-import { sessionsStateSchema } from "../data/schema";
-
-type SessionsDB = StreamDB<typeof sessionsStateSchema>;
 
 /**
  * Hook to get all sessions from the StreamDB.
  * Returns reactive data that updates when sessions change.
+ *
+ * NOTE: This must only be called after the root loader has run,
+ * which initializes the db via getSessionsDb().
  */
 export function useSessions() {
-  const [db, setDb] = useState<SessionsDB | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [isConnecting, setIsConnecting] = useState(true);
+  const db = getSessionsDbSync();
 
-  // Initialize the DB connection
-  useEffect(() => {
-    let mounted = true;
-
-    getSessionsDb()
-      .then((instance) => {
-        if (mounted) {
-          setDb(instance);
-          setIsConnecting(false);
-        }
-      })
-      .catch((err) => {
-        if (mounted) {
-          setError(err);
-          setIsConnecting(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Use the live query once DB is ready
   const query = useLiveQuery(
-    (q) => {
-      if (!db) return null;
-      return q.from({ sessions: db.collections.sessions });
-    },
+    (q) => q.from({ sessions: db.collections.sessions }),
     [db]
   );
 
@@ -56,8 +25,7 @@ export function useSessions() {
 
   return {
     sessions,
-    isLoading: isConnecting || (query ? query.isLoading : false),
-    error,
+    isLoading: query?.isLoading ?? false,
   };
 }
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Flex, Text, Spinner } from "@radix-ui/themes";
+import { Flex, Text } from "@radix-ui/themes";
 import { RepoSection } from "../components/RepoSection";
 import { useSessions, groupSessionsByRepo } from "../hooks/useSessions";
 
@@ -8,34 +8,7 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexPage() {
-  const { sessions, isLoading, error } = useSessions();
-
-  if (error) {
-    return (
-      <Flex direction="column" align="center" gap="3" py="9">
-        <Text color="red" size="3">
-          Failed to connect to session daemon
-        </Text>
-        <Text color="gray" size="2">
-          Make sure the daemon is running: pnpm serve
-        </Text>
-        <Text color="gray" size="1">
-          {error.message}
-        </Text>
-      </Flex>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Flex direction="column" align="center" gap="3" py="9">
-        <Spinner size="3" />
-        <Text color="gray" size="2">
-          Connecting to session daemon...
-        </Text>
-      </Flex>
-    );
-  }
+  const { sessions } = useSessions();
 
   if (sessions.length === 0) {
     return (

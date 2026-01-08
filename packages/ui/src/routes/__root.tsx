@@ -1,8 +1,14 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { Theme, Box, Heading, Flex, Text } from "@radix-ui/themes";
+import { getSessionsDb } from "../data/sessionsDb";
 
 export const Route = createRootRoute({
+  loader: async () => {
+    // Initialize db and preload data before any route renders
+    await getSessionsDb();
+    return {};
+  },
   component: RootLayout,
 });
 
