@@ -6,7 +6,7 @@
  */
 
 import { setup, createActor } from "xstate";
-import type { LogEntry, AssistantEntry, UserEntry, SystemEntry } from "./types.js";
+import type { LogEntry, AssistantEntry, UserEntry, SystemEntry, ToolUseBlock } from "./types.js";
 import { IDLE_TIMEOUT_MS, APPROVAL_TIMEOUT_MS, STALE_TIMEOUT_MS } from "./config.js";
 
 // Context holds computed state from log entries
@@ -162,10 +162,12 @@ export function logEntryToEvent(entry: LogEntry): StatusEvent | null {
 
   if (entry.type === "assistant") {
     const assistantEntry = entry as AssistantEntry;
-    const toolUseBlocks = assistantEntry.message.content.filter((b) => b.type === "tool_use");
+    const toolUseBlocks = assistantEntry.message.content.filter(
+      (b): b is ToolUseBlock => b.type === "tool_use"
+    );
 
     if (toolUseBlocks.length > 0) {
-      const toolUseIds = toolUseBlocks.map((b) => b.type === "tool_use" ? b.id : "");
+      const toolUseIds = toolUseBlocks.map((b) => b.id);
       return { type: "ASSISTANT_TOOL_USE", timestamp: assistantEntry.timestamp, toolUseIds };
     }
 

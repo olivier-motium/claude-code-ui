@@ -231,20 +231,17 @@ Summary:`,
  */
 function getWorkingSummary(session: SessionState): string {
   const { entries } = session;
-  const lastAssistant = [...entries].reverse().find((e) => e.type === "assistant");
+  const lastAssistant = entries.findLast((e) => e.type === "assistant");
 
   if (lastAssistant) {
-    const tools = lastAssistant.message.content
-      .filter((b): b is { type: "tool_use"; id: string; name: string; input: Record<string, unknown> } => b.type === "tool_use")
-      .map((b) => b.name);
+    const toolBlocks = lastAssistant.message.content.filter(
+      (b): b is { type: "tool_use"; id: string; name: string; input: Record<string, unknown> } =>
+        b.type === "tool_use"
+    );
 
-    if (tools.length > 0) {
-      const tool = tools[0];
-      const input = (
-        lastAssistant.message.content.find((b) => b.type === "tool_use") as {
-          input: Record<string, unknown>;
-        }
-      )?.input;
+    if (toolBlocks.length > 0) {
+      const tool = toolBlocks[0].name;
+      const input = toolBlocks[0].input;
 
       if (tool === "Edit" || tool === "Write") {
         const file = (input?.file_path as string)?.split("/").pop() || "file";

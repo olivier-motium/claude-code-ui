@@ -59,7 +59,7 @@ export function SendTextDialog({ sessionId, open, onOpenChange }: SendTextDialog
           <Flex align="center" gap="2">
             <Checkbox
               checked={submit}
-              onCheckedChange={(checked) => setSubmit(checked === true)}
+              onCheckedChange={(checked) => setSubmit(Boolean(checked))}
             />
             <Text size="2">Press Enter after sending</Text>
           </Flex>
