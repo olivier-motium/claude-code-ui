@@ -1,3 +1,4 @@
+import { resolve } from "node:path"
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite"
@@ -10,6 +11,11 @@ import jetBrainsMono from "@capsizecss/metrics/jetBrainsMono"
 import arial from "@capsizecss/metrics/arial"
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@claude-code-ui/daemon/schema": resolve(__dirname, "../daemon/src/schema.ts"),
+    },
+  },
   plugins: [
     TanStackRouterVite({
       routesDirectory: "./src/routes",

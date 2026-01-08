@@ -4,14 +4,13 @@ import type {
   SessionMetadata,
   UserEntry,
 } from "./types.js";
-
-// Track skipped entries for debugging
-let skippedEntries = 0;
+import { CONTENT_TRUNCATE_LENGTH } from "./config.js";
 
 export interface TailResult {
   entries: LogEntry[];
   newPosition: number;
   hadPartialLine: boolean;
+  skippedCount: number;
 }
 
 /**
@@ -28,7 +27,7 @@ export async function tailJSONL(
     const fileStat = await stat(filepath);
 
     if (fromByte >= fileStat.size) {
-      return { entries: [], newPosition: fromByte, hadPartialLine: false };
+      return { entries: [], newPosition: fromByte, hadPartialLine: false, skippedCount: 0 };
     }
 
     const buffer = Buffer.alloc(fileStat.size - fromByte);
@@ -40,6 +39,7 @@ export async function tailJSONL(
     const entries: LogEntry[] = [];
     let bytesConsumed = 0;
     let hadPartialLine = false;
+    let skippedCount = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -73,13 +73,7 @@ export async function tailJSONL(
         bytesConsumed += lineBytes + 1;
       } catch {
         // Malformed JSON that starts with { - track for debugging
-        skippedEntries++;
-        // Log periodically to avoid spam (every 100 entries or on first skip)
-        if (skippedEntries === 1 || skippedEntries % 100 === 0) {
-          console.warn(
-            `[parser] Skipped ${skippedEntries} malformed JSON entries (latest in ${filepath})`
-          );
-        }
+        skippedCount++;
         bytesConsumed += lineBytes + 1;
       }
     }
@@ -88,6 +82,7 @@ export async function tailJSONL(
       entries,
       newPosition: fromByte + bytesConsumed,
       hadPartialLine,
+      skippedCount,
     };
   } finally {
     await handle.close();
@@ -126,7 +121,9 @@ export function extractMetadata(entries: LogEntry[]): SessionMetadata | null {
       const content = entry.message.content;
       if (typeof content === "string") {
         originalPrompt =
-          content.length > 300 ? content.slice(0, 300) + "..." : content;
+          content.length > CONTENT_TRUNCATE_LENGTH
+            ? content.slice(0, CONTENT_TRUNCATE_LENGTH) + "..."
+            : content;
       }
     }
 

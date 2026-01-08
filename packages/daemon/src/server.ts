@@ -14,9 +14,20 @@ import {
 } from "./schema.js";
 import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
-import { generateAISummary, generateGoal } from "./summarizer.js";
+import { generateAISummary, generateGoal } from "./summarizer/index.js";
 import { queuePRCheck, getCachedPR, setOnPRUpdate, stopAllPolling } from "./github.js";
-import { STREAM_HOST, STREAM_PORT, STREAM_PATH, getStreamUrl } from "./config.js";
+import {
+  STREAM_HOST,
+  STREAM_PORT,
+  STREAM_PATH,
+  getStreamUrl,
+  MESSAGE_LOOKBACK_COUNT,
+  RECENT_OUTPUT_MAX_ITEMS,
+  CONTENT_PREVIEW_LENGTH,
+  CONTENT_TRUNCATE_LENGTH,
+  COMMAND_TRUNCATE_LENGTH,
+  SHORT_CONTENT_LENGTH,
+} from "./config.js";
 import { TerminalLinkRepo } from "./db/terminal-link-repo.js";
 import path from "node:path";
 import os from "node:os";
@@ -275,13 +286,13 @@ export class StreamServer {
  * Extract recent output from entries for live view
  * Returns the last few meaningful messages in chronological order
  */
-function extractRecentOutput(entries: LogEntry[], maxItems = 8): RecentOutput[] {
+function extractRecentOutput(entries: LogEntry[], maxItems = RECENT_OUTPUT_MAX_ITEMS): RecentOutput[] {
   const output: RecentOutput[] = [];
 
   // Get the last N entries that are messages (user or assistant)
   const messageEntries = entries
     .filter((e) => e.type === "user" || e.type === "assistant")
-    .slice(-20); // Look at last 20 messages to find good content
+    .slice(-MESSAGE_LOOKBACK_COUNT); // Look at last messages to find good content
 
   for (const entry of messageEntries) {
     if (entry.type === "assistant") {
@@ -292,7 +303,7 @@ function extractRecentOutput(entries: LogEntry[], maxItems = 8): RecentOutput[] 
       if (textBlock) {
         output.push({
           role: "assistant",
-          content: textBlock.text.slice(0, 500),
+          content: textBlock.text.slice(0, CONTENT_PREVIEW_LENGTH),
         });
       }
 
@@ -311,7 +322,7 @@ function extractRecentOutput(entries: LogEntry[], maxItems = 8): RecentOutput[] 
       if (typeof entry.message.content === "string" && entry.message.content.trim()) {
         output.push({
           role: "user",
-          content: entry.message.content.slice(0, 300),
+          content: entry.message.content.slice(0, CONTENT_TRUNCATE_LENGTH),
         });
       }
     }
@@ -333,7 +344,7 @@ function formatToolUse(tool: string, input: Record<string, unknown>): string {
     case "Write":
       return `📝 Writing ${shortenPath(input.file_path as string)}`;
     case "Bash":
-      return `▶️ Running: ${(input.command as string)?.slice(0, 60)}`;
+      return `▶️ Running: ${(input.command as string)?.slice(0, COMMAND_TRUNCATE_LENGTH)}`;
     case "Grep":
       return `🔍 Searching for "${input.pattern}"`;
     case "Glob":
@@ -381,7 +392,7 @@ function extractPendingTool(session: SessionState): Session["pendingTool"] {
           } else if (tool === "Grep" || tool === "Glob") {
             target = (input.pattern as string) ?? "";
           } else {
-            target = JSON.stringify(input).slice(0, 50);
+            target = JSON.stringify(input).slice(0, SHORT_CONTENT_LENGTH);
           }
 
           return { tool, target };

@@ -1,6 +1,6 @@
 import { useLiveQuery } from "@tanstack/react-db";
 import { getSessionsDbSync } from "../data/sessionsDb";
-import type { Session } from "../data/schema";
+import type { Session } from "@claude-code-ui/daemon/schema";
 import { groupSessionsByRepo, type RepoGroup } from "../lib/sessionScoring";
 
 /**

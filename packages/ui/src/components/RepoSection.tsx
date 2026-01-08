@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Link, Text, Separator } from "@radix-ui/themes";
 import { KanbanColumn } from "./KanbanColumn";
-import type { Session } from "../data/schema";
+import type { Session } from "@claude-code-ui/daemon/schema";
 
 interface RepoSectionProps {
   repoId: string;

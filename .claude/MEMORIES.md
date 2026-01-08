@@ -55,6 +55,16 @@ Shared utilities live in `packages/daemon/src/utils/`:
 - `timeout.ts` - withTimeout() wrapper for async operations
 - `colors.ts` - ANSI codes for CLI output
 - `errors.ts` - standardized error message extraction
+- `type-guards.ts` - type narrowing guards (isUserEntry, isError, getErrorMessage)
+
+### Summarizer Module Structure
+Summarizer is split into `packages/daemon/src/summarizer/`:
+- `index.ts` - barrel exports
+- `summarizer.ts` - main generateAISummary, generateGoal
+- `context-extraction.ts` - extractContext, extractEarlyContext
+- `summaries.ts` - getWorkingSummary, getFallbackSummary
+- `cache.ts` - evictStaleEntries, generateContentHash
+- `text-utils.ts` - cleanGoalText
 
 ### Cache Eviction Pattern
 Caches use LRU-style eviction with TTL (see summarizer.ts):

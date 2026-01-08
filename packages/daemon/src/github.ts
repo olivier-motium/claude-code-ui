@@ -16,6 +16,7 @@ import {
   GH_CLI_TIMEOUT_MS,
 } from "./config.js";
 import { withTimeout, TimeoutError } from "./utils/timeout.js";
+import { getErrorMessage } from "./utils/type-guards.js";
 
 const defaultExecFileAsync = promisify(execFile);
 
@@ -171,7 +172,7 @@ async function checkPRForBranch(cwd: string, branch: string, sessionId: string):
       console.warn(`[PR] ${error.message}`);
     } else {
       // gh CLI not available or not in a git repo
-      console.error(`Failed to check PR for ${branch}:`, (error as Error).message);
+      console.error(`Failed to check PR for ${branch}:`, getErrorMessage(error));
     }
     prCache.set(cacheKey, { pr: null, lastChecked: Date.now() });
   }
@@ -228,7 +229,7 @@ async function getCIStatus(cwd: string, prNumber: number): Promise<{
     if (error instanceof TimeoutError) {
       console.warn(`[PR] ${error.message}`);
     } else {
-      console.error(`Failed to get CI status for PR #${prNumber}:`, (error as Error).message);
+      console.error(`Failed to get CI status for PR #${prNumber}:`, getErrorMessage(error));
     }
     return { overallStatus: "unknown", checks: [] };
   }
@@ -295,7 +296,7 @@ async function checkCIStatus(cwd: string, prNumber: number, sessionId: string): 
       startIdleCIPolling(cwd, prNumber, sessionId);
     }
   } catch (error) {
-    console.error(`Failed to check CI for PR #${prNumber}:`, (error as Error).message);
+    console.error(`Failed to check CI for PR #${prNumber}:`, getErrorMessage(error));
   }
 }
 

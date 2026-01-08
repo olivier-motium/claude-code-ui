@@ -8,6 +8,7 @@ import os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { KITTY_SOCKET } from "./config.js";
+import { getErrorMessage } from "./utils/type-guards.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -299,7 +300,7 @@ export async function setupKitty(): Promise<KittySetupResult> {
     return {
       success: false,
       status: "setup_failed",
-      message: `Setup failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Setup failed: ${getErrorMessage(error)}`,
       actions,
     };
   }

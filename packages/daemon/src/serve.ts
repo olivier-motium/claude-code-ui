@@ -34,6 +34,7 @@ import { KittyRc } from "./kitty-rc.js";
 import { TerminalLinkRepo } from "./db/terminal-link-repo.js";
 import { closeDb } from "./db/index.js";
 import { setupKitty, getKittyStatus } from "./kitty-setup.js";
+import { getErrorMessage } from "./utils/type-guards.js";
 
 // Validate required environment variables at startup
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -160,7 +161,7 @@ async function main(): Promise<void> {
       const operation = type === "created" ? "insert" : type === "deleted" ? "delete" : "update";
       await streamServer.publishSession(session, operation);
     } catch (error) {
-      console.error(`${colors.yellow}[ERROR]${colors.reset} Failed to publish:`, error);
+      console.error(`${colors.yellow}[ERROR]${colors.reset} Failed to publish:`, getErrorMessage(error));
     }
   });
 
@@ -203,7 +204,7 @@ async function main(): Promise<void> {
     try {
       await streamServer.publishSession(session, "insert");
     } catch (error) {
-      console.error(`${colors.yellow}[ERROR]${colors.reset} Failed to publish initial session:`, error);
+      console.error(`${colors.yellow}[ERROR]${colors.reset} Failed to publish initial session:`, getErrorMessage(error));
     }
   }
 

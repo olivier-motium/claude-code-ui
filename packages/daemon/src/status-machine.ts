@@ -6,8 +6,9 @@
  */
 
 import { setup, createActor } from "xstate";
-import type { LogEntry, AssistantEntry, UserEntry, SystemEntry, ToolUseBlock } from "./types.js";
+import type { LogEntry, ToolUseBlock } from "./types.js";
 import { IDLE_TIMEOUT_MS, APPROVAL_TIMEOUT_MS, STALE_TIMEOUT_MS } from "./config.js";
+import { isUserEntry, isAssistantEntry, isSystemEntry } from "./utils/type-guards.js";
 
 // Context holds computed state from log entries
 export interface StatusContext {
@@ -142,43 +143,40 @@ export const statusMachine = setup({
  * Convert a log entry to a status event.
  */
 export function logEntryToEvent(entry: LogEntry): StatusEvent | null {
-  if (entry.type === "user") {
-    const userEntry = entry as UserEntry;
-    const content = userEntry.message.content;
+  if (isUserEntry(entry)) {
+    const content = entry.message.content;
 
     if (typeof content === "string") {
       // Human prompt
-      return { type: "USER_PROMPT", timestamp: userEntry.timestamp };
+      return { type: "USER_PROMPT", timestamp: entry.timestamp };
     } else if (Array.isArray(content)) {
       // Tool result(s)
       const toolUseIds = content
         .filter((b) => b.type === "tool_result")
         .map((b) => b.tool_use_id);
       if (toolUseIds.length > 0) {
-        return { type: "TOOL_RESULT", timestamp: userEntry.timestamp, toolUseIds };
+        return { type: "TOOL_RESULT", timestamp: entry.timestamp, toolUseIds };
       }
     }
   }
 
-  if (entry.type === "assistant") {
-    const assistantEntry = entry as AssistantEntry;
-    const toolUseBlocks = assistantEntry.message.content.filter(
+  if (isAssistantEntry(entry)) {
+    const toolUseBlocks = entry.message.content.filter(
       (b): b is ToolUseBlock => b.type === "tool_use"
     );
 
     if (toolUseBlocks.length > 0) {
       const toolUseIds = toolUseBlocks.map((b) => b.id);
-      return { type: "ASSISTANT_TOOL_USE", timestamp: assistantEntry.timestamp, toolUseIds };
+      return { type: "ASSISTANT_TOOL_USE", timestamp: entry.timestamp, toolUseIds };
     }
 
     // Streaming assistant message (no tool_use)
-    return { type: "ASSISTANT_STREAMING", timestamp: assistantEntry.timestamp };
+    return { type: "ASSISTANT_STREAMING", timestamp: entry.timestamp };
   }
 
-  if (entry.type === "system") {
-    const systemEntry = entry as SystemEntry;
-    if (systemEntry.subtype === "turn_duration" || systemEntry.subtype === "stop_hook_summary") {
-      return { type: "TURN_END", timestamp: systemEntry.timestamp };
+  if (isSystemEntry(entry)) {
+    if (entry.subtype === "turn_duration" || entry.subtype === "stop_hook_summary") {
+      return { type: "TURN_END", timestamp: entry.timestamp };
     }
   }
 

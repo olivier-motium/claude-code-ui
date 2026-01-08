@@ -183,9 +183,17 @@ Both are normalized to `owner/repo` for `repoId`.
 
 ---
 
-## AI Summarization (`summarizer.ts`)
+## AI Summarization (`summarizer/`)
 
-Generates session goals and summaries using Claude API.
+Generates session goals and summaries using Claude API. The summarizer is split into modular files:
+
+| File | Purpose |
+|------|---------|
+| `summarizer.ts` | Main entry point, API calls |
+| `context-extraction.ts` | Extract context from entries |
+| `summaries.ts` | Working/fallback summary logic |
+| `cache.ts` | LRU cache with TTL eviction |
+| `text-utils.ts` | Text cleaning utilities |
 
 ### Public Functions
 
@@ -194,7 +202,7 @@ Generates session goals and summaries using Claude API.
 Generates a 5-10 word high-level goal from session context.
 
 ```typescript
-import { generateGoal } from "./summarizer.js";
+import { generateGoal } from "./summarizer/index.js";
 
 const goal = await generateGoal(session);
 // Returns: "Build UI for monitoring sessions"
@@ -331,6 +339,33 @@ const msg = getErrorMessage(error);
 // Log with consistent formatting
 logError("github", error, "checking PR");
 logWarn("parser", "Skipped malformed entry");
+```
+
+### `type-guards.ts`
+
+Type guards for safer type narrowing, replacing `as X` assertions.
+
+```typescript
+import {
+  isUserEntry,
+  isAssistantEntry,
+  isSystemEntry,
+  isError,
+  isRecord,
+  getErrorMessage,
+} from "./utils/type-guards.js";
+
+// Type-safe entry handling
+if (isUserEntry(entry)) {
+  console.log(entry.message.content); // TypeScript knows it's UserEntry
+}
+
+// Safe error extraction
+try {
+  await someOperation();
+} catch (error) {
+  console.error("Failed:", getErrorMessage(error));
+}
 ```
 
 ---

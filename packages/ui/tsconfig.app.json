@@ -16,6 +16,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path mapping for monorepo packages */
+    "baseUrl": ".",
+    "paths": {
+      "@claude-code-ui/daemon/schema": ["../daemon/src/schema.ts"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

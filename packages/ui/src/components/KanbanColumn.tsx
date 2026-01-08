@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text, ScrollArea } from "@radix-ui/themes";
-import { SessionCard } from "./SessionCard";
-import type { Session } from "../data/schema";
+import { SessionCard } from "./session-card";
+import type { Session } from "@claude-code-ui/daemon/schema";
 
 interface KanbanColumnProps {
   title: string;
