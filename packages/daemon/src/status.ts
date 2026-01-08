@@ -4,6 +4,7 @@ import type {
   SessionStatus,
   UserEntry,
   AssistantEntry,
+  SystemEntry,
   ToolUseBlock,
 } from "./types.js";
 
@@ -102,11 +103,21 @@ export function deriveStatus(
   } else {
     // Last entry is assistant message
     const stopReason = lastEntry.message.stop_reason;
-    console.log(`[Status] Assistant entry: hasPendingToolUse=${hasPendingToolUse}, stopReason=${stopReason}`);
 
-    // Only "waiting" if Claude explicitly finished with end_turn
-    // null = still streaming, "tool_use" = tool executing
-    if (stopReason === "end_turn" && !hasPendingToolUse) {
+    // Check if there's a turn_duration system message after this assistant message
+    // (Claude Code logs stop_reason: null even when done, but adds turn_duration after)
+    const lastEntryIndex = entries.indexOf(lastEntry);
+    const entriesAfterLast = entries.slice(lastEntryIndex + 1);
+    const hasTurnDuration = entriesAfterLast.some(
+      (e): e is SystemEntry => e.type === "system" && (e as SystemEntry).subtype === "turn_duration"
+    );
+
+    console.log(`[Status] Assistant entry: hasPendingToolUse=${hasPendingToolUse}, stopReason=${stopReason}, hasTurnDuration=${hasTurnDuration}`);
+
+    // "waiting" if:
+    // - Claude explicitly finished with end_turn, OR
+    // - There's a turn_duration system message (turn completed even if stop_reason is null)
+    if ((stopReason === "end_turn" || hasTurnDuration) && !hasPendingToolUse) {
       status = "waiting";
     } else {
       // Still streaming, or tool executing
