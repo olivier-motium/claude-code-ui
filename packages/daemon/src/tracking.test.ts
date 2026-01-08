@@ -189,6 +189,35 @@ describe("Session Tracking", () => {
 
       expect(status.status).toBe("idle");
     });
+
+    it("should stay working during tool execution even after timeout", async () => {
+      // Create a tool_result entry from 2 minutes ago (past the 30s timeout)
+      const oldTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const toolResultEntry = JSON.stringify({
+        type: "user",
+        parentUuid: null,
+        uuid: `uuid-${Date.now()}`,
+        sessionId: TEST_SESSION_ID,
+        timestamp: oldTime,
+        cwd: "/Users/test/project",
+        version: "1.0.0",
+        gitBranch: "main",
+        isSidechain: false,
+        userType: "external",
+        message: {
+          role: "user",
+          content: [{ type: "tool_result", tool_use_id: "tool-123", content: "Command output" }],
+        },
+      }) + "\n";
+
+      await writeFile(TEST_LOG_FILE, toolResultEntry);
+
+      const { entries } = await tailJSONL(TEST_LOG_FILE, 0);
+      const status = deriveStatus(entries);
+
+      // Should still be "working" because it's a tool_result, not a human prompt
+      expect(status.status).toBe("working");
+    });
   });
 
   describe("SessionWatcher", () => {

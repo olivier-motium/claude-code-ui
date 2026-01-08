@@ -79,14 +79,23 @@ export function deriveStatus(
   let status: SessionStatus;
 
   if (lastEntry.type === "user") {
-    // User sent a message - check if Claude should still be working
-    const timeSinceUserMessage = now - lastActivityTime;
-    if (timeSinceUserMessage > workingTimeoutMs) {
-      // User message is stale - Claude probably isn't working
-      // (session was interrupted, or Claude crashed, etc.)
-      status = "waiting";
-    } else {
+    // Check if this is a tool_result (array) vs human prompt (string)
+    const isToolResult = Array.isArray(lastEntry.message.content);
+
+    if (isToolResult) {
+      // Tool result means Claude is processing - always "working"
+      // (tools can take a long time, especially Task agents)
       status = "working";
+    } else {
+      // Human prompt - check timeout
+      const timeSinceUserMessage = now - lastActivityTime;
+      if (timeSinceUserMessage > workingTimeoutMs) {
+        // User message is stale - Claude probably isn't working
+        // (session was interrupted, or Claude crashed, etc.)
+        status = "waiting";
+      } else {
+        status = "working";
+      }
     }
   } else {
     status = "waiting";
