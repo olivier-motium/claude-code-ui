@@ -12,6 +12,53 @@ import type { LogEntry, SessionMetadata, StatusResult } from "./types.js";
 
 const CLAUDE_PROJECTS_DIR = `${process.env.HOME}/.claude/projects`;
 
+/**
+ * Resolve git info for a session - reuses cached info for existing sessions.
+ */
+async function resolveSessionGitInfo(
+  existingSession: SessionState | undefined,
+  cwd: string
+): Promise<GitInfo> {
+  if (existingSession) {
+    return {
+      repoUrl: existingSession.gitRepoUrl,
+      repoId: existingSession.gitRepoId,
+      branch: existingSession.gitBranch,
+      isGitRepo: existingSession.gitRepoUrl !== null || existingSession.gitBranch !== null,
+    };
+  }
+  return getGitInfoCached(cwd);
+}
+
+/**
+ * Build session state from components.
+ */
+function buildSessionState(params: {
+  sessionId: string;
+  filepath: string;
+  metadata: SessionMetadata;
+  gitInfo: GitInfo;
+  status: StatusResult;
+  entries: LogEntry[];
+  bytePosition: number;
+}): SessionState {
+  const { sessionId, filepath, metadata, gitInfo, status, entries, bytePosition } = params;
+  return {
+    sessionId,
+    filepath,
+    encodedDir: extractEncodedDir(filepath),
+    cwd: metadata.cwd,
+    gitBranch: gitInfo.branch || metadata.gitBranch,
+    originalPrompt: metadata.originalPrompt,
+    startedAt: metadata.startedAt,
+    status,
+    entries,
+    bytePosition,
+    gitRepoUrl: gitInfo.repoUrl,
+    gitRepoId: gitInfo.repoId,
+  };
+}
+
 export interface SessionState {
   sessionId: string;
   filepath: string;
@@ -108,79 +155,56 @@ export class SessionWatcher extends EventEmitter {
 
   private async handleFile(
     filepath: string,
-    eventType: "add" | "change"
+    _eventType: "add" | "change"
   ): Promise<void> {
     try {
       const sessionId = extractSessionId(filepath);
       const existingSession = this.sessions.get(sessionId);
 
-      // Determine starting byte position
+      // Read new entries from file
       const fromByte = existingSession?.bytePosition ?? 0;
-
-      // Read new entries
-      const { entries: newEntries, newPosition } = await tailJSONL(
-        filepath,
-        fromByte
-      );
+      const { entries: newEntries, newPosition } = await tailJSONL(filepath, fromByte);
 
       if (newEntries.length === 0 && existingSession) {
-        // No new data
-        return;
+        return; // No new data
       }
 
-      // Combine with existing entries or start fresh
+      // Combine with existing entries
       const allEntries = existingSession
         ? [...existingSession.entries, ...newEntries]
         : newEntries;
 
-      // Extract metadata (only needed for new sessions)
-      let metadata: SessionMetadata | null;
-      let gitInfo: GitInfo;
+      // Extract metadata for new sessions
+      const metadata = existingSession
+        ? {
+            sessionId: existingSession.sessionId,
+            cwd: existingSession.cwd,
+            gitBranch: existingSession.gitBranch,
+            originalPrompt: existingSession.originalPrompt,
+            startedAt: existingSession.startedAt,
+          }
+        : extractMetadata(allEntries);
 
-      if (existingSession) {
-        metadata = {
-          sessionId: existingSession.sessionId,
-          cwd: existingSession.cwd,
-          gitBranch: existingSession.gitBranch,
-          originalPrompt: existingSession.originalPrompt,
-          startedAt: existingSession.startedAt,
-        };
-        // Reuse cached git info
-        gitInfo = {
-          repoUrl: existingSession.gitRepoUrl,
-          repoId: existingSession.gitRepoId,
-          branch: existingSession.gitBranch,
-          isGitRepo: existingSession.gitRepoUrl !== null || existingSession.gitBranch !== null,
-        };
-      } else {
-        metadata = extractMetadata(allEntries);
-        if (!metadata) {
-          // Not enough data yet
-          return;
-        }
-        // Look up git info for new sessions
-        gitInfo = await getGitInfoCached(metadata.cwd);
+      if (!metadata) {
+        return; // Not enough data yet
       }
 
-      // Derive status from all entries
+      // Resolve git info (cached for existing sessions)
+      const gitInfo = await resolveSessionGitInfo(existingSession, metadata.cwd);
+
+      // Derive status and build session state
       const status = deriveStatus(allEntries);
       const previousStatus = existingSession?.status;
 
-      // Build session state - prefer branch from git info over log entry
-      const session: SessionState = {
+      const session = buildSessionState({
         sessionId,
         filepath,
-        encodedDir: extractEncodedDir(filepath),
-        cwd: metadata.cwd,
-        gitBranch: gitInfo.branch || metadata.gitBranch,
-        originalPrompt: metadata.originalPrompt,
-        startedAt: metadata.startedAt,
+        metadata,
+        gitInfo,
         status,
         entries: allEntries,
         bytePosition: newPosition,
-        gitRepoUrl: gitInfo.repoUrl,
-        gitRepoId: gitInfo.repoId,
-      };
+      });
 
       // Store session
       this.sessions.set(sessionId, session);

@@ -7,6 +7,7 @@
 
 import { setup, createActor } from "xstate";
 import type { LogEntry, AssistantEntry, UserEntry, SystemEntry } from "./types.js";
+import { IDLE_TIMEOUT_MS, APPROVAL_TIMEOUT_MS, STALE_TIMEOUT_MS } from "./config.js";
 
 // Context holds computed state from log entries
 export interface StatusContext {
@@ -210,10 +211,6 @@ export function deriveStatusFromMachine(entries: LogEntry[]): {
   const now = Date.now();
   const lastActivityTime = context.lastActivityAt ? new Date(context.lastActivityAt).getTime() : 0;
   const timeSinceActivity = now - lastActivityTime;
-
-  const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-  const APPROVAL_TIMEOUT_MS = 5 * 1000; // 5 seconds
-  const STALE_TIMEOUT_MS = 60 * 1000; // 60 seconds
 
   // Apply timeout transitions
   if (timeSinceActivity > IDLE_TIMEOUT_MS) {

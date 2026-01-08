@@ -36,3 +36,12 @@ Status is derived via state machine (not imperative if/else) to handle edge case
 ### Durable Streams for Real-time Sync
 Port 4450 serves SSE stream that UI subscribes to via TanStack DB.
 This allows multiple UI clients to stay in sync without polling.
+
+### Centralized Configuration (config.ts)
+All daemon constants live in `packages/daemon/src/config.ts`:
+- Stream server config (STREAM_HOST, STREAM_PORT, STREAM_PATH)
+- Timeout constants (IDLE_TIMEOUT_MS, APPROVAL_TIMEOUT_MS, STALE_TIMEOUT_MS)
+- GitHub polling intervals (PR_CACHE_TTL, CI_POLL_INTERVAL_ACTIVE/IDLE)
+- Cache limits (PR_CACHE_MAX_SIZE, PR_CACHE_ENTRY_TTL)
+
+This prevents magic numbers scattered across files and enables env var overrides.

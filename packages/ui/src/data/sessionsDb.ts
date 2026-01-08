@@ -1,7 +1,8 @@
 import { createStreamDB, type StreamDB } from "@durable-streams/state";
 import { sessionsStateSchema } from "./schema";
 
-const STREAM_URL = "http://127.0.0.1:4450/sessions";
+/** Stream URL - configurable via VITE_STREAM_URL env var for remote deployments */
+const STREAM_URL = import.meta.env.VITE_STREAM_URL ?? "http://127.0.0.1:4450/sessions";
 
 export type SessionsDB = StreamDB<typeof sessionsStateSchema>;
 

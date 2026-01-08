@@ -12,10 +12,21 @@ How to run Claude Code Session Tracker in production.
 
 ## Environment Variables
 
+### Daemon (packages/daemon)
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | - | Claude API key for summaries |
+| `ANTHROPIC_API_KEY` | Yes | - | Claude API key for AI summaries |
+| `STREAM_HOST` | No | `127.0.0.1` | Host to bind stream server |
+| `PORT` | No | `4450` | Port for stream server |
+| `MAX_AGE_HOURS` | No | `24` | Filter sessions older than this |
 | `GITHUB_TOKEN` | No | `gh` CLI auth | GitHub API for PR/CI status |
+
+### UI (packages/ui)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VITE_STREAM_URL` | No | `http://127.0.0.1:4450/sessions` | URL to daemon stream endpoint |
 
 ---
 
@@ -147,7 +158,7 @@ Claude Code retains logs for 30 days by default. Extend via `~/.claude/settings.
 
 | Port | Service | Configurable |
 |------|---------|--------------|
-| 4450 | Durable Streams server | No (hardcoded) |
+| 4450 | Durable Streams server | Yes (`PORT` env var) |
 | 5173 | UI dev server (Vite) | Yes (vite.config.ts) |
 
 ---

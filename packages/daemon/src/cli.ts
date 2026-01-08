@@ -2,14 +2,13 @@
 
 import { SessionWatcher, type SessionEvent, type SessionState } from "./watcher.js";
 import { formatStatus, getStatusKey } from "./status.js";
+import { RECENT_THRESHOLD_MS } from "./config.js";
 
 // Parse CLI args
 const args = process.argv.slice(2);
 const showOnlyRecent = args.includes("--recent") || args.includes("-r");
 const showOnlyActive = args.includes("--active") || args.includes("-a");
 const helpRequested = args.includes("--help") || args.includes("-h");
-
-const RECENT_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
 
 // ANSI colors
 const colors = {

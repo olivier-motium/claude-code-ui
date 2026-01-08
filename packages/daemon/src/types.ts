@@ -150,17 +150,3 @@ export interface StatusResult {
   messageCount: number;
 }
 
-// Type guards
-export function isUserEntry(entry: LogEntry): entry is UserEntry {
-  return entry.type === "user";
-}
-
-export function isAssistantEntry(entry: LogEntry): entry is AssistantEntry {
-  return entry.type === "assistant";
-}
-
-export function isMessageEntry(
-  entry: LogEntry
-): entry is UserEntry | AssistantEntry {
-  return entry.type === "user" || entry.type === "assistant";
-}

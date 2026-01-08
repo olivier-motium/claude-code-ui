@@ -7,6 +7,13 @@ import { promisify } from "node:util";
 import fastq from "fastq";
 import type { queueAsPromised } from "fastq";
 import type { PRInfo, CIStatus } from "./schema.js";
+import {
+  PR_CACHE_TTL,
+  CI_POLL_INTERVAL_ACTIVE,
+  CI_POLL_INTERVAL_IDLE,
+  PR_CACHE_MAX_SIZE,
+  PR_CACHE_ENTRY_TTL,
+} from "./config.js";
 
 const defaultExecAsync = promisify(exec);
 
@@ -36,16 +43,35 @@ type PRUpdateCallback = (sessionId: string, pr: PRInfo | null) => void;
 
 // Cache PR info to avoid redundant API calls
 const prCache = new Map<string, { pr: PRInfo | null; lastChecked: number }>();
-const PR_CACHE_TTL = 60_000; // 1 minute
 
 // Track which sessions need CI polling
 const activeCIPolling = new Map<string, NodeJS.Timeout>();
 
-// Polling intervals
-const CI_POLL_INTERVAL_ACTIVE = 30_000; // 30 seconds while CI is running
-const CI_POLL_INTERVAL_IDLE = 5 * 60_000; // 5 minutes after CI completes
-
 let onPRUpdate: PRUpdateCallback | null = null;
+
+/**
+ * Prune stale entries from the PR cache to prevent memory leaks.
+ */
+function prunePRCache(): void {
+  const now = Date.now();
+
+  // Remove entries older than TTL
+  for (const [key, entry] of prCache) {
+    if (now - entry.lastChecked > PR_CACHE_ENTRY_TTL) {
+      prCache.delete(key);
+    }
+  }
+
+  // Hard limit - remove oldest entries if over max size
+  if (prCache.size > PR_CACHE_MAX_SIZE) {
+    const entries = Array.from(prCache.entries())
+      .sort((a, b) => a[1].lastChecked - b[1].lastChecked);
+    const toRemove = entries.length - PR_CACHE_MAX_SIZE;
+    for (let i = 0; i < toRemove; i++) {
+      prCache.delete(entries[i][0]);
+    }
+  }
+}
 
 /**
  * Set the callback for PR updates
@@ -72,6 +98,9 @@ const queue: queueAsPromised<QueueTask> = fastq.promise(processTask, 2);
  * Check if a branch has an associated PR
  */
 async function checkPRForBranch(cwd: string, branch: string, sessionId: string): Promise<void> {
+  // Prune stale cache entries on each check
+  prunePRCache();
+
   const cacheKey = `${cwd}:${branch}`;
 
   // Check cache
@@ -180,32 +209,30 @@ async function getCIStatus(cwd: string, prNumber: number): Promise<{
 }
 
 /**
+ * GitHub state to CIStatus mapping
+ */
+const GH_STATE_MAP: Record<string, CIStatus> = {
+  SUCCESS: "success",
+  COMPLETED: "success",
+  NEUTRAL: "success",
+  SKIPPED: "success",
+  FAILURE: "failure",
+  ERROR: "failure",
+  TIMED_OUT: "failure",
+  ACTION_REQUIRED: "failure",
+  CANCELLED: "cancelled",
+  IN_PROGRESS: "running",
+  QUEUED: "running",
+  REQUESTED: "running",
+  WAITING: "running",
+  PENDING: "pending",
+};
+
+/**
  * Map GitHub state to our CIStatus
  */
 function mapGHState(state: string): CIStatus {
-  switch (state.toUpperCase()) {
-    case "SUCCESS":
-    case "COMPLETED":
-    case "NEUTRAL":
-    case "SKIPPED":
-      return "success";
-    case "FAILURE":
-    case "ERROR":
-    case "TIMED_OUT":
-    case "ACTION_REQUIRED":
-      return "failure";
-    case "CANCELLED":
-      return "cancelled";
-    case "IN_PROGRESS":
-    case "QUEUED":
-    case "REQUESTED":
-    case "WAITING":
-      return "running";
-    case "PENDING":
-      return "pending";
-    default:
-      return "unknown";
-  }
+  return GH_STATE_MAP[state.toUpperCase()] ?? "unknown";
 }
 
 /**

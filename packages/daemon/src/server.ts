@@ -10,11 +10,9 @@ import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
 import { generateAISummary, generateGoal } from "./summarizer.js";
 import { queuePRCheck, getCachedPR, setOnPRUpdate, stopAllPolling } from "./github.js";
+import { STREAM_HOST, STREAM_PORT, STREAM_PATH, getStreamUrl } from "./config.js";
 import path from "node:path";
 import os from "node:os";
-
-const DEFAULT_PORT = 4450;
-const SESSIONS_STREAM_PATH = "/sessions";
 
 export interface StreamServerOptions {
   port?: number;
@@ -30,21 +28,21 @@ export class StreamServer {
   private sessionCache = new Map<string, SessionState>();
 
   constructor(options: StreamServerOptions = {}) {
-    this.port = options.port ?? DEFAULT_PORT;
+    this.port = options.port ?? STREAM_PORT;
     const dataDir = options.dataDir ?? path.join(os.homedir(), ".claude-code-ui", "streams");
 
     this.server = new DurableStreamTestServer({
       port: this.port,
-      host: "127.0.0.1",
+      host: STREAM_HOST,
       dataDir,
     });
 
-    this.streamUrl = `http://127.0.0.1:${this.port}${SESSIONS_STREAM_PATH}`;
+    this.streamUrl = getStreamUrl(STREAM_HOST, this.port);
   }
 
   async start(): Promise<void> {
     await this.server.start();
-    console.log(`Durable Streams server running on http://127.0.0.1:${this.port}`);
+    console.log(`Durable Streams server running on http://${STREAM_HOST}:${this.port}`);
 
     // Create or connect to the sessions stream
     try {

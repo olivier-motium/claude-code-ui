@@ -243,39 +243,14 @@ export async function generateGoal(session: SessionState): Promise<string> {
 
   // Generate AI goal
   try {
-    const context: string[] = [];
-    context.push(`Original task: ${originalPrompt.slice(0, 300)}`);
-
-    // Get early entries
-    const earlyEntries = entries.slice(0, 5);
-    context.push("\nEarly activity:");
-    for (const entry of earlyEntries) {
-      if (entry.type === "assistant") {
-        const textBlock = entry.message.content.find((b) => b.type === "text");
-        if (textBlock && textBlock.type === "text") {
-          context.push(`Claude: ${textBlock.text.slice(0, 150)}`);
-        }
-      }
-    }
-
-    // Get recent entries
-    const recentEntries = entries.slice(-10);
-    context.push("\nRecent activity:");
-    for (const entry of recentEntries) {
-      if (entry.type === "assistant") {
-        const tools = entry.message.content.filter((b) => b.type === "tool_use");
-        if (tools.length > 0) {
-          const toolNames = tools.map((t) => t.name).join(", ");
-          context.push(`Tools used: ${toolNames}`);
-        }
-        const textBlock = entry.message.content.find((b): b is { type: "text"; text: string } => b.type === "text");
-        if (textBlock) {
-          context.push(`Claude: ${textBlock.text.slice(0, 100)}`);
-        }
-      } else if (entry.type === "user" && typeof entry.message.content === "string") {
-        context.push(`User: ${entry.message.content.slice(0, 80)}`);
-      }
-    }
+    // Build context from early and recent entries
+    const context = [
+      `Original task: ${originalPrompt.slice(0, 300)}`,
+      "\nEarly activity:",
+      ...extractEarlyContext(entries),
+      "\nRecent activity:",
+      ...extractRecentGoalContext(entries),
+    ];
 
     const goalResponse = await queueAPICall({
       model: "claude-sonnet-4-20250514",
@@ -297,10 +272,7 @@ Goal:`,
       ],
     });
 
-    let goal = goalResponse || originalPrompt.slice(0, 50);
-
-    // Clean up the response
-    goal = cleanGoalText(goal);
+    const goal = cleanGoalText(goalResponse || originalPrompt.slice(0, 50));
 
     // Cache with current entry count
     goalCache.set(sessionId, { goal, entryCount: entries.length });
@@ -310,6 +282,49 @@ Goal:`,
     console.error("Failed to generate goal:", error);
     return cleanGoalText(originalPrompt);
   }
+}
+
+/**
+ * Extract context from early session entries for goal generation.
+ */
+function extractEarlyContext(entries: LogEntry[]): string[] {
+  const context: string[] = [];
+  const earlyEntries = entries.slice(0, 5);
+  for (const entry of earlyEntries) {
+    if (entry.type === "assistant") {
+      const textBlock = entry.message.content.find((b) => b.type === "text");
+      if (textBlock && textBlock.type === "text") {
+        context.push(`Claude: ${textBlock.text.slice(0, 150)}`);
+      }
+    }
+  }
+  return context;
+}
+
+/**
+ * Extract context from recent session entries for goal generation.
+ */
+function extractRecentGoalContext(entries: LogEntry[]): string[] {
+  const context: string[] = [];
+  const recentEntries = entries.slice(-10);
+  for (const entry of recentEntries) {
+    if (entry.type === "assistant") {
+      const tools = entry.message.content.filter((b) => b.type === "tool_use");
+      if (tools.length > 0) {
+        const toolNames = tools.map((t) => t.name).join(", ");
+        context.push(`Tools used: ${toolNames}`);
+      }
+      const textBlock = entry.message.content.find(
+        (b): b is { type: "text"; text: string } => b.type === "text"
+      );
+      if (textBlock) {
+        context.push(`Claude: ${textBlock.text.slice(0, 100)}`);
+      }
+    } else if (entry.type === "user" && typeof entry.message.content === "string") {
+      context.push(`User: ${entry.message.content.slice(0, 80)}`);
+    }
+  }
+  return context;
 }
 
 /**

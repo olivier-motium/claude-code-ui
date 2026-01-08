@@ -3,7 +3,6 @@ import type {
   LogEntry,
   SessionMetadata,
   UserEntry,
-  isUserEntry,
 } from "./types.js";
 
 export interface TailResult {

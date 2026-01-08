@@ -25,10 +25,15 @@ for (const envPath of envPaths) {
 import { SessionWatcher, type SessionEvent, type SessionState } from "./watcher.js";
 import { StreamServer } from "./server.js";
 import { formatStatus } from "./status.js";
+import { STREAM_PORT, MAX_AGE_HOURS, MAX_AGE_MS } from "./config.js";
 
-const PORT = parseInt(process.env.PORT ?? "4450", 10);
-const MAX_AGE_HOURS = parseInt(process.env.MAX_AGE_HOURS ?? "24", 10);
-const MAX_AGE_MS = MAX_AGE_HOURS * 60 * 60 * 1000;
+// Validate required environment variables at startup
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+if (!ANTHROPIC_API_KEY) {
+  console.error("Missing required env var: ANTHROPIC_API_KEY");
+  console.error("Set ANTHROPIC_API_KEY=sk-ant-... to enable AI summaries");
+  process.exit(1);
+}
 
 // ANSI colors
 const colors = {
@@ -56,7 +61,7 @@ async function main(): Promise<void> {
   console.log();
 
   // Start the durable streams server
-  const streamServer = new StreamServer({ port: PORT });
+  const streamServer = new StreamServer({ port: STREAM_PORT });
   await streamServer.start();
 
   console.log(`Stream URL: ${colors.cyan}${streamServer.getStreamUrl()}${colors.reset}`);
