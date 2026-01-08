@@ -376,19 +376,69 @@ Send text to a window. If submit is true, appends carriage return.
 
 Open interactive window picker. Returns null if cancelled.
 
-### Configuration
+### Automatic Configuration
 
-Requires kitty setup in `~/.config/kitty/kitty.conf`:
+Kitty remote control is **automatically configured** when the daemon starts. No manual setup required.
 
+The daemon:
+1. Checks if kitty is installed
+2. Creates `~/.config/kitty/claude-code.conf` with remote control settings
+3. Adds `include claude-code.conf` to your `kitty.conf`
+4. Creates `macos-launch-services-cmdline` for GUI launches (macOS only)
+5. Sends SIGUSR1 to reload running kitty instances
+
+For manual setup: `pnpm --filter @claude-code-ui/daemon setup:kitty`
+
+### Generated Config Files
+
+**~/.config/kitty/claude-code.conf:**
 ```conf
-allow_remote_control password
+allow_remote_control socket-only
 listen_on unix:/tmp/claude-cc-kitty
-remote_control_password "your-password-here" ls launch focus-window send-text select-window set-tab-title
 ```
 
-Set password via environment variable:
-```bash
-export KITTY_RC_PASSWORD="your-password-here"
+Uses `socket-only` mode for security (no passwords needed).
+
+---
+
+## Kitty Auto-Setup (`kitty-setup.ts`)
+
+Automatic kitty terminal configuration module.
+
+### Public Functions
+
+#### `setupKitty(): Promise<KittySetupResult>`
+
+Run full setup process. Creates config files and reloads kitty.
+
+```typescript
+import { setupKitty } from "./kitty-setup.js";
+
+const result = await setupKitty();
+// { success: true, status: "ready", message: "...", actions: [...] }
+```
+
+#### `getKittyStatus(): Promise<KittyStatusDetails>`
+
+Get detailed status for diagnostics.
+
+```typescript
+import { getKittyStatus } from "./kitty-setup.js";
+
+const status = await getKittyStatus();
+// { installed, running, socketExists, socketReachable, configExists }
+```
+
+### KittyStatus Types
+
+```typescript
+type KittyStatus =
+  | "not_installed"      // kitty not found
+  | "not_running"        // kitty installed but not running
+  | "not_configured"     // needs setup
+  | "config_needs_reload" // config created, restart kitty
+  | "ready"              // fully working
+  | "setup_failed";      // setup error
 ```
 
 ---
@@ -401,7 +451,8 @@ HTTP API for terminal control (Port 4451).
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/kitty/health` | Check kitty availability |
+| GET | `/api/kitty/health` | Check kitty availability with detailed status |
+| POST | `/api/kitty/setup` | Trigger manual kitty setup |
 | POST | `/api/sessions/:id/focus` | Focus linked terminal |
 | POST | `/api/sessions/:id/open` | Open/create terminal |
 | POST | `/api/sessions/:id/link-terminal` | Link existing terminal |
@@ -409,6 +460,32 @@ HTTP API for terminal control (Port 4451).
 | POST | `/api/sessions/:id/send-text` | Send text to terminal |
 
 ### Request/Response Examples
+
+**Check kitty health:**
+```bash
+curl http://127.0.0.1:4451/api/kitty/health
+# {
+#   "available": true,
+#   "details": {
+#     "installed": true,
+#     "running": true,
+#     "socketExists": true,
+#     "socketReachable": true,
+#     "configExists": true
+#   }
+# }
+```
+
+**Trigger kitty setup:**
+```bash
+curl -X POST http://127.0.0.1:4451/api/kitty/setup
+# {
+#   "success": true,
+#   "status": "ready",
+#   "message": "Kitty remote control configured successfully",
+#   "actions": ["Created ~/.config/kitty/claude-code.conf", ...]
+# }
+```
 
 **Open session terminal:**
 ```bash

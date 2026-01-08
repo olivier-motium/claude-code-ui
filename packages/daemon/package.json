@@ -10,6 +10,7 @@
     "watch": "tsx src/cli.ts",
     "watch:recent": "tsx src/cli.ts --recent",
     "watch:active": "tsx src/cli.ts --active",
+    "setup:kitty": "tsx src/cli/setup-kitty.ts",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",

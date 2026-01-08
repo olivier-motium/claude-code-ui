@@ -86,6 +86,21 @@ Or set a `GITHUB_TOKEN` environment variable:
 echo "GITHUB_TOKEN=ghp_..." >> .env
 ```
 
+## Optional: Kitty Terminal Integration
+
+If you use [kitty terminal](https://sw.kovidgoyal.net/kitty/), terminal control is **automatically configured** on first daemon start:
+
+- Creates `~/.config/kitty/claude-code.conf` with remote control settings
+- Adds include directive to your `kitty.conf`
+- Reloads kitty config (or restart kitty if needed)
+
+After setup, you can:
+- Click "Open in kitty" to launch terminals for sessions
+- Link existing terminals to sessions
+- Send text directly to linked terminals
+
+For manual setup: `pnpm --filter @claude-code-ui/daemon setup:kitty`
+
 ## Running Separately
 
 If you prefer to run daemon and UI in separate terminals:

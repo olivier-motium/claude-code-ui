@@ -12,6 +12,7 @@ import {
 import { getDb, schema } from "../db/index.js";
 import type { StreamServer } from "../server.js";
 import type { SessionState } from "../watcher.js";
+import { getKittyStatus, setupKitty } from "../kitty-setup.js";
 
 interface RouterDependencies {
   kittyRc: KittyRc;
@@ -36,10 +37,19 @@ export function createApiRouter(deps: RouterDependencies) {
     })
   );
 
-  // Health check
+  // Health check with detailed status
   api.get("/kitty/health", async (c) => {
-    const available = await kittyRc.health();
-    return c.json({ available });
+    const details = await getKittyStatus();
+    return c.json({
+      available: details.socketReachable,
+      details,
+    });
+  });
+
+  // Manual setup trigger
+  api.post("/kitty/setup", async (c) => {
+    const result = await setupKitty();
+    return c.json(result);
   });
 
   // Focus existing linked terminal

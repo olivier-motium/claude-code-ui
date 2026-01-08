@@ -84,6 +84,18 @@ SQLite (better-sqlite3) chosen over in-memory storage for:
 
 Terminal links sync to UI via Durable Streams by including `terminalLink` field in Session schema updates.
 
+### Kitty Auto-Setup (Non-Invasive Config)
+`kitty-setup.ts` automatically configures kitty remote control on daemon startup:
+- Uses `socket-only` mode (secure, no passwords needed, filesystem permissions)
+- Creates separate `claude-code.conf` via `include` directive (non-invasive)
+- Sends SIGUSR1 to reload config without restart
+- Creates `macos-launch-services-cmdline` for GUI launches on macOS
+
+This approach was chosen over:
+- Password mode: Requires manual password setup/env vars
+- Direct kitty.conf modification: Risky, could break user config
+- --override flags: Only work for terminal-launched kitty
+
 ## Known Issues
 
 ### Pre-existing Test Failures

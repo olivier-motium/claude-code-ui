@@ -4,8 +4,27 @@
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:4451/api";
 
-interface KittyHealth {
+/** Detailed kitty status for diagnostics */
+interface KittyStatusDetails {
+  installed: boolean;
+  running: boolean;
+  socketExists: boolean;
+  socketReachable: boolean;
+  configExists: boolean;
+}
+
+/** Health check response with detailed status */
+export interface KittyHealthResponse {
   available: boolean;
+  details: KittyStatusDetails;
+}
+
+/** Result of kitty setup operation */
+export interface KittySetupResponse {
+  success: boolean;
+  status: string;
+  message: string;
+  actions: string[];
 }
 
 interface ApiResponse {
@@ -37,10 +56,17 @@ async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 /**
- * Check if kitty terminal is available.
+ * Check if kitty terminal is available with detailed status.
  */
-export async function getKittyHealth(): Promise<KittyHealth> {
+export async function getKittyHealth(): Promise<KittyHealthResponse> {
   return apiCall("/kitty/health");
+}
+
+/**
+ * Trigger kitty remote control setup.
+ */
+export async function runKittySetup(): Promise<KittySetupResponse> {
+  return apiCall("/kitty/setup", { method: "POST" });
 }
 
 /**

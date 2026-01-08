@@ -33,6 +33,7 @@ import { createApiRouter } from "./api/router.js";
 import { KittyRc } from "./kitty-rc.js";
 import { TerminalLinkRepo } from "./db/terminal-link-repo.js";
 import { closeDb } from "./db/index.js";
+import { setupKitty, getKittyStatus } from "./kitty-setup.js";
 
 // Validate required environment variables at startup
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -64,6 +65,29 @@ async function main(): Promise<void> {
   // Initialize kitty remote control and link repository
   const kittyRc = new KittyRc();
   const linkRepo = new TerminalLinkRepo();
+
+  // Auto-setup kitty remote control if needed
+  const kittyStatus = await getKittyStatus();
+
+  if (!kittyStatus.installed) {
+    console.log(`${colors.dim}[KITTY]${colors.reset} Not installed - terminal control disabled`);
+  } else if (!kittyStatus.socketReachable) {
+    console.log(`${colors.yellow}[KITTY]${colors.reset} Running automatic setup...`);
+
+    const result = await setupKitty();
+
+    for (const action of result.actions) {
+      console.log(`${colors.green}[KITTY]${colors.reset} ${action}`);
+    }
+
+    if (result.success) {
+      console.log(`${colors.green}[KITTY]${colors.reset} ${result.message}`);
+    } else {
+      console.log(`${colors.yellow}[KITTY]${colors.reset} ${result.message}`);
+    }
+  } else {
+    console.log(`${colors.green}[KITTY]${colors.reset} Remote control ready`);
+  }
 
   // Start the session watcher
   const watcher = new SessionWatcher({ debounceMs: 300 });
