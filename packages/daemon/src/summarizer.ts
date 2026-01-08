@@ -193,76 +193,30 @@ function getFallbackSummary(session: SessionState): string {
 }
 
 /**
- * Find the "epoch start" - detect if /clear was likely used by looking for
- * large time gaps between messages (> 30 min suggests a clear/restart)
- */
-function findEpochStart(entries: LogEntry[]): number {
-  const TIME_GAP_THRESHOLD = 30 * 60 * 1000; // 30 minutes
-
-  // Walk backwards to find the most recent large gap
-  for (let i = entries.length - 1; i > 0; i--) {
-    const current = entries[i];
-    const previous = entries[i - 1];
-
-    if (!("timestamp" in current) || !("timestamp" in previous)) continue;
-
-    const currentTime = new Date(current.timestamp).getTime();
-    const previousTime = new Date(previous.timestamp).getTime();
-    const gap = currentTime - previousTime;
-
-    if (gap > TIME_GAP_THRESHOLD) {
-      // Found a large gap - this is likely where /clear happened
-      return i;
-    }
-  }
-
-  return 0; // No gap found, use all entries
-}
-
-/**
  * Generate the high-level goal of the session
  * Cached but regenerated if session grows significantly
- * Detects /clear by looking for time gaps
  */
 export async function generateGoal(session: SessionState): Promise<string> {
   const { sessionId, originalPrompt, entries } = session;
 
-  // Find where the current "epoch" starts (after any /clear)
-  const epochStart = findEpochStart(entries);
-  const currentEpochEntries = entries.slice(epochStart);
-
   // Check cache - but regenerate if session has grown 5x since last generation
-  // or if we detected a new epoch
   const cached = goalCache.get(sessionId);
-  if (cached && entries.length < cached.entryCount * 5 && epochStart === 0) {
+  if (cached && entries.length < cached.entryCount * 5) {
     return cached.goal;
   }
 
-  // For very new epochs, use the first user prompt in this epoch
-  if (currentEpochEntries.length < 5) {
-    const firstUserEntry = currentEpochEntries.find(
-      (e) => e.type === "user" && typeof e.message.content === "string"
-    );
-    if (firstUserEntry && firstUserEntry.type === "user" && typeof firstUserEntry.message.content === "string") {
-      return cleanGoalText(firstUserEntry.message.content);
-    }
+  // For new sessions, use the original prompt
+  if (entries.length < 5) {
     return cleanGoalText(originalPrompt);
   }
 
-  // Generate AI goal using current epoch context
+  // Generate AI goal
   try {
     const context: string[] = [];
+    context.push(`Original task: ${originalPrompt.slice(0, 300)}`);
 
-    // Get the first user prompt in this epoch (the "new" original prompt)
-    const firstUserEntry = currentEpochEntries.find(
-      (e) => e.type === "user" && typeof e.message.content === "string"
-    );
-    if (firstUserEntry && firstUserEntry.type === "user" && typeof firstUserEntry.message.content === "string") {
-      context.push(`Task: ${firstUserEntry.message.content.slice(0, 300)}`);
-    }
-
-    // Get early entries from this epoch
-    const earlyEntries = currentEpochEntries.slice(0, 5);
+    // Get early entries
+    const earlyEntries = entries.slice(0, 5);
     context.push("\nEarly activity:");
     for (const entry of earlyEntries) {
       if (entry.type === "assistant") {
@@ -274,7 +228,7 @@ export async function generateGoal(session: SessionState): Promise<string> {
     }
 
     // Get recent entries
-    const recentEntries = currentEpochEntries.slice(-10);
+    const recentEntries = entries.slice(-10);
     context.push("\nRecent activity:");
     for (const entry of recentEntries) {
       if (entry.type === "assistant") {
