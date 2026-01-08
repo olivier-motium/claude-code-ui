@@ -118,21 +118,26 @@ export function deriveStatus(
       }
     );
 
-    // Timeout fallback: if no turn-end marker and message is old enough,
-    // assume turn ended (for sessions without hooks on older CC versions)
+    // Timeout fallbacks for when there's no turn-end marker
     const timeSinceLastMessage = now - lastActivityTime;
-    const STALE_ASSISTANT_TIMEOUT_MS = 60 * 1000; // 60 seconds
-    const isStale = timeSinceLastMessage > STALE_ASSISTANT_TIMEOUT_MS;
 
-    console.log(`[Status] Assistant entry: hasPendingToolUse=${hasPendingToolUse}, stopReason=${stopReason}, hasTurnEndMarker=${hasTurnEndMarker}, timeSince=${Math.round(timeSinceLastMessage/1000)}s`);
+    // Short timeout for pending tool_use - if Claude sent a tool and it's been a few seconds,
+    // it's waiting for approval (not still streaming)
+    const PENDING_TOOL_TIMEOUT_MS = 5 * 1000; // 5 seconds
+    const isPendingApproval = hasPendingToolUse && timeSinceLastMessage > PENDING_TOOL_TIMEOUT_MS;
+
+    // Longer timeout for messages without tool_use (turn ended but no marker)
+    const STALE_ASSISTANT_TIMEOUT_MS = 60 * 1000; // 60 seconds
+    const isStale = !hasPendingToolUse && timeSinceLastMessage > STALE_ASSISTANT_TIMEOUT_MS;
+
+    console.log(`[Status] Assistant entry: hasPendingToolUse=${hasPendingToolUse}, stopReason=${stopReason}, hasTurnEndMarker=${hasTurnEndMarker}, isPendingApproval=${isPendingApproval}, timeSince=${Math.round(timeSinceLastMessage/1000)}s`);
 
     // "waiting" if:
     // - Claude explicitly finished with end_turn, OR
     // - There's a turn-end system message (turn completed even if stop_reason is null), OR
-    // - Message is stale (fallback for sessions without hooks)
-    //   - If stale with pending tool_use → waiting for approval (needs-approval column)
-    //   - If stale without tool_use → turn ended (waiting column)
-    if (stopReason === "end_turn" || hasTurnEndMarker || isStale) {
+    // - Message has pending tool_use and is old enough (waiting for approval), OR
+    // - Message is stale without tool_use (turn ended, fallback for sessions without hooks)
+    if (stopReason === "end_turn" || hasTurnEndMarker || isPendingApproval || isStale) {
       status = "waiting";
     } else {
       // Still streaming, or tool executing
