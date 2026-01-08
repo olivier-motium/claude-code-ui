@@ -1,6 +1,9 @@
-# Claude Code Session Tracker
+# Claude Code Session Tracker - Technical Specification
 
-A real-time dashboard for tracking Claude Code sessions across repositories, using Durable Streams for live updates.
+Detailed technical reference for Claude Code session log format and parsing.
+
+> **See also:** [README.md](README.md) for architecture overview and getting started.
+> This document provides deep technical details on the JSONL log format that Claude Code produces.
 
 ## Overview
 

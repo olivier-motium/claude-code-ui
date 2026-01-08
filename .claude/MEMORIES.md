@@ -7,10 +7,14 @@ Documentation lives in `docs/` folder with `docs/index.md` as the entry point.
 | Doc | Purpose |
 |-----|---------|
 | `docs/index.md` | Documentation hub - start here |
+| `docs/getting-started.md` | Onboarding quickstart |
 | `docs/cli-reference.md` | CLI commands and flags |
 | `docs/ui-components.md` | React component hierarchy |
 | `docs/summarizer.md` | AI summarization service |
-| `docs/deployment.md` | Production deployment |
+| `docs/operations/deployment.md` | Production deployment |
+| `docs/operations/configuration.md` | Env vars and internal constants |
+| `docs/api/daemon-api.md` | github.ts, git.ts, summarizer.ts APIs |
+| `docs/guides/testing.md` | Manual testing strategies |
 
 ## CLI Flags
 
@@ -34,7 +38,7 @@ Status is derived via state machine (not imperative if/else) to handle edge case
 - Clean event-driven transitions
 
 ### Durable Streams for Real-time Sync
-Port 4450 serves SSE stream that UI subscribes to via TanStack DB.
+Port 4450 serves SSE stream that UI subscribes to via `@durable-streams/state`.
 This allows multiple UI clients to stay in sync without polling.
 
 ### Centralized Configuration (config.ts)

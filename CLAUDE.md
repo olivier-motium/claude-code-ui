@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ⚠️ CRITICAL: Start Every Session Here
 
-> **ALWAYS read [`docs/INDEX.md`](docs/INDEX.md) FIRST before starting any task.**
+> **ALWAYS read [`docs/index.md`](docs/index.md) FIRST before starting any task.**
 >
 > The index.md is the documentation hub that tells you which documents to read for your specific task.
 
 ### Required Reading Workflow
 
-1. **FIRST: Read [`docs/INDEX.md`](docs/INDEX.md)** — Find the right documentation for your task
+1. **FIRST: Read [`docs/index.md`](docs/index.md)** — Find the right documentation for your task
 2. **THEN: Read the relevant documentation** based on what index.md tells you
 3. **Check `TODO.md`** for current tasks and priorities
 

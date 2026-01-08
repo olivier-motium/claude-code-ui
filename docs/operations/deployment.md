@@ -28,6 +28,8 @@ How to run Claude Code Session Tracker in production.
 |----------|----------|---------|-------------|
 | `VITE_STREAM_URL` | No | `http://127.0.0.1:4450/sessions` | URL to daemon stream endpoint |
 
+See [Configuration Reference](configuration.md) for all internal constants.
+
 ---
 
 ## Development
@@ -233,3 +235,10 @@ pnpm preview
 # Or with any static server
 npx serve packages/ui/dist
 ```
+
+---
+
+## Related Documentation
+
+- [Configuration Reference](configuration.md) - All environment variables and tunables
+- [CLI Reference](../cli-reference.md) - Command line flags

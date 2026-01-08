@@ -103,6 +103,12 @@ Individual session card with details.
 
 ## Data Layer
 
+The UI uses **Durable Streams** (`@durable-streams/state`) for real-time session synchronization:
+
+- `createStreamDB()` creates the reactive state container
+- Subscribes to SSE endpoint at `VITE_STREAM_URL` (default: `http://127.0.0.1:4450/sessions`)
+- Provides `useSessions()` hook for React components
+
 ### `useSessions` Hook
 
 React hook for subscribing to session updates.
@@ -128,9 +134,9 @@ function MyComponent() {
 ```
 
 **Behavior:**
-- Connects to Durable Streams at `http://127.0.0.1:4450/sessions`
+- Connects to Durable Streams via SSE
 - Automatically reconnects on disconnect
-- Provides real-time updates via SSE
+- Updates trigger re-renders via React's reactive state
 
 ### `sessionsDb`
 
@@ -142,6 +148,9 @@ Singleton StreamDB connection.
 - `getSessionsDb()` - Async getter, initializes connection
 - `getSessionsDbSync()` - Sync getter (throws if not initialized)
 - `closeSessionsDb()` - Closes connection
+
+**Configuration:**
+- `VITE_STREAM_URL` - Override the daemon endpoint (default: `http://127.0.0.1:4450/sessions`)
 
 ---
 
