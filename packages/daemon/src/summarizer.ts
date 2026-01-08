@@ -3,6 +3,9 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import type { MessageCreateParamsNonStreaming } from "@anthropic-ai/sdk/resources/messages";
+import fastq from "fastq";
+import type { queueAsPromised } from "fastq";
 import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
 
@@ -13,6 +16,37 @@ function getClient(): Anthropic {
     client = new Anthropic();
   }
   return client;
+}
+
+// Queue for Anthropic API calls to avoid rate limit errors
+interface APITask {
+  params: MessageCreateParamsNonStreaming;
+  resolve: (result: string) => void;
+  reject: (error: Error) => void;
+}
+
+async function processAPITask(task: APITask): Promise<void> {
+  try {
+    const response = await getClient().messages.create(task.params);
+    const text = response.content[0].type === "text"
+      ? response.content[0].text.trim()
+      : "";
+    task.resolve(text);
+  } catch (error) {
+    task.reject(error as Error);
+  }
+}
+
+// Concurrency of 1 to be safe with rate limits
+const apiQueue: queueAsPromised<APITask> = fastq.promise(processAPITask, 1);
+
+/**
+ * Queue an API call and return the result
+ */
+function queueAPICall(params: MessageCreateParamsNonStreaming): Promise<string> {
+  return new Promise((resolve, reject) => {
+    apiQueue.push({ params, resolve, reject });
+  });
 }
 
 // Cache summaries to avoid redundant API calls
@@ -98,7 +132,7 @@ export async function generateAISummary(session: SessionState): Promise<string> 
   try {
     const context = extractContext(session);
 
-    const response = await getClient().messages.create({
+    const summary = await queueAPICall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 100,
       messages: [
@@ -113,15 +147,12 @@ Summary:`,
       ],
     });
 
-    const summary =
-      response.content[0].type === "text"
-        ? response.content[0].text.trim()
-        : "Session active";
+    const result = summary || "Session active";
 
     // Cache the result
-    summaryCache.set(sessionId, { summary, hash: contentHash });
+    summaryCache.set(sessionId, { summary: result, hash: contentHash });
 
-    return summary;
+    return result;
   } catch (error) {
     console.error("Failed to generate AI summary:", error);
     return getFallbackSummary(session);
@@ -246,7 +277,7 @@ export async function generateGoal(session: SessionState): Promise<string> {
       }
     }
 
-    const response = await getClient().messages.create({
+    const goalResponse = await queueAPICall({
       model: "claude-sonnet-4-20250514",
       max_tokens: 30,
       messages: [
@@ -266,10 +297,7 @@ Goal:`,
       ],
     });
 
-    let goal =
-      response.content[0].type === "text"
-        ? response.content[0].text.trim()
-        : originalPrompt.slice(0, 50);
+    let goal = goalResponse || originalPrompt.slice(0, 50);
 
     // Clean up the response
     goal = cleanGoalText(goal);
