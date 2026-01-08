@@ -1,4 +1,4 @@
-import { Card, Flex, Text, Code, Box, HoverCard, Link, Badge } from "@radix-ui/themes";
+import { Card, Flex, Text, Code, Box, HoverCard, Badge } from "@radix-ui/themes";
 import type { Session, CIStatus } from "../data/schema";
 
 interface SessionCardProps {
@@ -151,16 +151,17 @@ export function SessionCard({ session }: SessionCardProps) {
             <Flex align="center" justify="between" gap="2">
               <Flex align="center" gap="2">
                 {session.pr ? (
-                  <Link
+                  <a
                     href={session.pr.url}
                     target="_blank"
-                    size="1"
+                    rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
+                    style={{ textDecoration: "none" }}
                   >
                     <Badge color={getCIStatusColor(session.pr.ciStatus)} variant="soft" size="1">
                       {getCIStatusIcon(session.pr.ciStatus)} #{session.pr.number}
                     </Badge>
-                  </Link>
+                  </a>
                 ) : session.gitBranch ? (
                   <Code size="1" variant="soft" color="gray">
                     {session.gitBranch.length > 20
@@ -226,9 +227,14 @@ export function SessionCard({ session }: SessionCardProps) {
           {session.pr && (
             <Box>
               <Flex align="center" gap="2" mb="2">
-                <Link href={session.pr.url} target="_blank" size="1" weight="medium">
+                <a
+                  href={session.pr.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "var(--font-size-1)", fontWeight: 500 }}
+                >
                   PR #{session.pr.number}: {session.pr.title}
-                </Link>
+                </a>
               </Flex>
               {session.pr.ciChecks.length > 0 && (
                 <Flex gap="2" wrap="wrap">
