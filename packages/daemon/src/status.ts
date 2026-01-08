@@ -81,6 +81,9 @@ export function deriveStatus(
   if (lastEntry.type === "user") {
     // Check if this is a tool_result (array) vs human prompt (string)
     const isToolResult = Array.isArray(lastEntry.message.content);
+    const timeSinceUserMessage = now - lastActivityTime;
+
+    console.log(`[Status] User entry: isToolResult=${isToolResult}, timeSince=${Math.round(timeSinceUserMessage/1000)}s`);
 
     if (isToolResult) {
       // Tool result means Claude is processing - always "working"
@@ -88,7 +91,6 @@ export function deriveStatus(
       status = "working";
     } else {
       // Human prompt - check timeout
-      const timeSinceUserMessage = now - lastActivityTime;
       if (timeSinceUserMessage > workingTimeoutMs) {
         // User message is stale - Claude probably isn't working
         // (session was interrupted, or Claude crashed, etc.)
@@ -99,6 +101,7 @@ export function deriveStatus(
     }
   } else {
     // Last entry is assistant message
+    console.log(`[Status] Assistant entry: hasPendingToolUse=${hasPendingToolUse}`);
     if (hasPendingToolUse) {
       // Tool is executing - this is "working" not "waiting"
       status = "working";
