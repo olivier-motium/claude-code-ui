@@ -184,6 +184,16 @@ Alternative to AI summaries for session status. Claude Code writes status to `.c
 
 ## Known Issues
 
+### node-pty on macOS ARM64
+
+The `node-pty` prebuilt binary's `spawn-helper` may lack execute permissions after pnpm install. Symptom: `posix_spawnp failed` error. Fix: `chmod +x node_modules/.pnpm/node-pty*/node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper`. Consider adding a postinstall script if this recurs.
+
+Also, node-pty spawns don't inherit shell PATH. Use full executable paths (e.g., `/opt/homebrew/bin/claude` not just `claude`). The `getClaudePath()` function in `pty.ts` handles this.
+
+### WebSocket Server Path Matching
+
+The `ws` WebSocketServer's `path` option only matches exact paths. Don't use `path: "/pty"` if you need `/pty/:id` - handle path validation in the connection handler instead.
+
 ### Pre-existing Test Failures
 `pnpm test` in daemon has 7 unique failures (14 total, running twice from dist/src):
 - Status derivation tests have mismatched expectations
