@@ -20,7 +20,6 @@ How to run Claude Code Session Tracker in production.
 | `STREAM_HOST` | No | `127.0.0.1` | Host to bind stream server |
 | `PORT` | No | `4450` | Port for stream server |
 | `MAX_AGE_HOURS` | No | `24` | Filter sessions older than this |
-| `GITHUB_TOKEN` | No | `gh` CLI auth | GitHub API for PR/CI status |
 
 ### UI (packages/ui)
 
@@ -206,12 +205,6 @@ curl http://localhost:5173
 1. Verify API key: `echo $ANTHROPIC_API_KEY | head -c 10`
 2. Check Anthropic API status
 3. Review daemon logs for rate limiting errors
-
-### PR status not updating
-
-1. Check GitHub auth: `gh auth status`
-2. Or set `GITHUB_TOKEN` environment variable
-3. Verify branch has a PR open
 
 ---
 

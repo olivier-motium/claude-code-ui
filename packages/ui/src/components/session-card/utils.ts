@@ -2,7 +2,7 @@
  * Utility functions for SessionCard components
  */
 
-import type { Session, CIStatus } from "../../types/schema";
+import type { Session } from "../../types/schema";
 import { getEffectiveStatus } from "../../lib/sessionStatus";
 
 export function getCardClass(session: Session): string {
@@ -79,35 +79,5 @@ export function getRolePrefix(role: "user" | "assistant" | "tool"): string {
       return "";
     case "tool":
       return "";
-  }
-}
-
-export function getCIStatusIcon(status: CIStatus): string {
-  switch (status) {
-    case "success":
-      return "✓";
-    case "failure":
-      return "✗";
-    case "running":
-    case "pending":
-      return "◎";
-    case "cancelled":
-      return "⊘";
-    default:
-      return "?";
-  }
-}
-
-export function getCIStatusColor(status: CIStatus): "green" | "red" | "yellow" | "gray" {
-  switch (status) {
-    case "success":
-      return "green";
-    case "failure":
-      return "red";
-    case "running":
-    case "pending":
-      return "yellow";
-    default:
-      return "gray";
   }
 }

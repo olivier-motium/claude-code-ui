@@ -9,7 +9,6 @@ import {
   sessionsStateSchema,
   type Session,
   type RecentOutput,
-  type PRInfo,
   type TerminalLink,
   type FileStatus,
 } from "./schema.js";
@@ -17,7 +16,6 @@ import { StatusWatcher } from "./status-watcher.js";
 import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
 import { generateAISummary, generateGoal } from "./summarizer/index.js";
-import { queuePRCheck, getCachedPR, setOnPRUpdate, stopAllPolling } from "./github.js";
 import {
   STREAM_HOST,
   STREAM_PORT,
@@ -43,7 +41,7 @@ export class StreamServer {
   private stream: DurableStream | null = null;
   private port: number;
   private streamUrl: string;
-  // Track sessions for PR update callbacks
+  // Track sessions for status update callbacks
   private sessionCache = new Map<string, SessionState>();
   // Terminal link repository for lookups
   private linkRepo: TerminalLinkRepo;
@@ -97,21 +95,10 @@ export class StreamServer {
       }
     }
 
-    // Set up PR update callback
-    setOnPRUpdate(async (sessionId, pr) => {
-      console.log(`[PR] Received PR update for session ${sessionId.slice(0, 8)}: ${pr ? `PR #${pr.number}` : "no PR"}`);
-      const sessionState = this.sessionCache.get(sessionId);
-      if (sessionState) {
-        await this.publishSessionWithPR(sessionState, pr);
-      } else {
-        console.log(`[PR] No cached session state for ${sessionId.slice(0, 8)}`);
-      }
-    });
   }
 
   async stop(): Promise<void> {
     this.stopping = true;  // Prevent new publishes during shutdown
-    stopAllPolling();
     this.statusWatcher.stop();
     await this.server.stop();
     this.stream = null;
@@ -132,7 +119,6 @@ export class StreamServer {
   private async buildSession(
     sessionState: SessionState,
     overrides: {
-      pr?: PRInfo | null;
       fileStatus?: FileStatus | null;
       terminalLink?: TerminalLink | null;
     } = {}
@@ -142,13 +128,6 @@ export class StreamServer {
       generateGoal(sessionState),
       generateAISummary(sessionState),
     ]);
-
-    // Get PR: use override if provided, otherwise fetch from cache
-    const pr = overrides.pr !== undefined
-      ? overrides.pr
-      : sessionState.gitBranch
-        ? getCachedPR(sessionState.cwd, sessionState.gitBranch)
-        : null;
 
     // Get terminal link: use override if provided, otherwise fetch from DB
     let terminalLink: TerminalLink | null;
@@ -185,7 +164,6 @@ export class StreamServer {
       goal,
       summary,
       recentOutput: extractRecentOutput(sessionState.entries),
-      pr,
       terminalLink,
       fileStatus,
       embeddedPty: null,
@@ -206,14 +184,6 @@ export class StreamServer {
     this.sessionCache.set(sessionState.sessionId, sessionState);
     this.statusWatcher.watchProject(sessionState.cwd);
 
-    // Queue PR check if we have a branch (will update via callback)
-    if (sessionState.gitBranch) {
-      console.log(`[PR] Session ${sessionState.sessionId.slice(0, 8)} has branch: ${sessionState.gitBranch}`);
-      queuePRCheck(sessionState.cwd, sessionState.gitBranch, sessionState.sessionId);
-    } else {
-      console.log(`[PR] Session ${sessionState.sessionId.slice(0, 8)} has no branch`);
-    }
-
     const session = await this.buildSession(sessionState);
 
     let event;
@@ -228,17 +198,6 @@ export class StreamServer {
       });
     }
 
-    await this.stream.append(event);
-  }
-
-  /**
-   * Publish session with updated PR info (called from PR update callback).
-   */
-  async publishSessionWithPR(sessionState: SessionState, pr: PRInfo | null): Promise<void> {
-    if (this.stopping || !this.stream) return;
-
-    const session = await this.buildSession(sessionState, { pr });
-    const event = sessionsStateSchema.sessions.update({ value: session });
     await this.stream.append(event);
   }
 

@@ -4,12 +4,12 @@
  */
 
 import { useState } from "react";
-import { Flex, Text, Code, Badge, Box } from "@radix-ui/themes";
+import { Flex, Text, Code, Badge, Box, Tooltip } from "@radix-ui/themes";
 import { SendTextDialog } from "../SendTextDialog";
 import { SessionActions } from "../session-card/SessionActions";
 import { getEffectiveStatus } from "../../lib/sessionStatus";
-import { formatTimeAgo, formatTarget, formatGoal, getCIStatusIcon, getCIStatusColor, getRowClass } from "./utils";
-import { TOOL_ICONS, STATUS_ICONS, STATUS_COLORS } from "./constants";
+import { formatTimeAgo, formatTarget, formatGoal, getRowClass } from "./utils";
+import { TOOL_ICONS, STATUS_ICONS, STATUS_COLORS, STATUS_LABELS } from "./constants";
 import type { OpsTableRowProps } from "./types";
 
 export function OpsTableRow({ session, isSelected, onSelect }: OpsTableRowProps) {
@@ -21,22 +21,27 @@ export function OpsTableRow({ session, isSelected, onSelect }: OpsTableRowProps)
       <Box
         className={getRowClass(session, isSelected)}
         onClick={onSelect}
+        tabIndex={0}
+        role="button"
+        aria-pressed={isSelected}
         style={{
           padding: "var(--space-2) var(--space-3)",
           cursor: "pointer",
           borderBottom: "1px solid var(--gray-a4)",
-          backgroundColor: isSelected ? "var(--accent-a3)" : "transparent",
         }}
       >
         <Flex align="center" gap="3">
-          {/* Status indicator */}
+          {/* Status indicator with tooltip */}
           <Box style={{ width: "24px", textAlign: "center" }}>
-            <Text
-              size="2"
-              color={STATUS_COLORS[status] as "green" | "orange" | "gray"}
-            >
-              {STATUS_ICONS[status]}
-            </Text>
+            <Tooltip content={STATUS_LABELS[status]} side="right">
+              <Text
+                size="2"
+                color={STATUS_COLORS[status] as "green" | "orange" | "gray"}
+                aria-label={STATUS_LABELS[status]}
+              >
+                {STATUS_ICONS[status]}
+              </Text>
+            </Tooltip>
           </Box>
 
           {/* Goal / prompt - flex grow */}
@@ -57,25 +62,9 @@ export function OpsTableRow({ session, isSelected, onSelect }: OpsTableRowProps)
             </Flex>
           </Box>
 
-          {/* Branch or PR */}
+          {/* Branch */}
           <Box style={{ width: "100px" }}>
-            {session.pr ? (
-              <a
-                href={session.pr.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                style={{ textDecoration: "none" }}
-              >
-                <Badge
-                  color={getCIStatusColor(session.pr.ciStatus)}
-                  variant="soft"
-                  size="1"
-                >
-                  {getCIStatusIcon(session.pr.ciStatus)} #{session.pr.number}
-                </Badge>
-              </a>
-            ) : session.gitBranch ? (
+            {session.gitBranch ? (
               <Code size="1" variant="soft" color="gray" truncate>
                 {session.gitBranch.length > 15
                   ? session.gitBranch.slice(0, 12) + "..."

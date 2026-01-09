@@ -28,5 +28,11 @@ export const STATUS_ICONS: Record<string, string> = {
   idle: "◐",
 };
 
+export const STATUS_LABELS: Record<string, string> = {
+  working: "Working - Claude is actively processing",
+  waiting: "Waiting - Needs your input or approval",
+  idle: "Idle - Session is inactive",
+};
+
 /** Stale threshold: 10 minutes without activity while working */
 export const STALE_THRESHOLD_MS = 10 * 60 * 1000;

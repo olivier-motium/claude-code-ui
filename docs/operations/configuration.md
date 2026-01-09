@@ -20,7 +20,6 @@ Complete reference for all environment variables and tunable constants.
 | `PTY_WS_HOST` | `127.0.0.1` | PTY WebSocket server bind address |
 | `PTY_WS_PORT` | `4452` | PTY WebSocket server port |
 | `MAX_AGE_HOURS` | `24` | Filter sessions older than this |
-| `GITHUB_TOKEN` | gh CLI auth | GitHub API for PR/CI status |
 | `KITTY_SOCKET` | `unix:/tmp/claude-cc-kitty` | Kitty remote control socket |
 | `KITTY_RC_PASSWORD` | (none) | Password for kitty remote control |
 | `DB_PATH` | `~/.claude-code-ui/data.db` | SQLite database path |
@@ -46,16 +45,6 @@ These constants are defined in `packages/daemon/src/config.ts` and affect daemon
 | `APPROVAL_TIMEOUT_MS` | 5 seconds | Time before stale tool_use detection |
 | `STALE_TIMEOUT_MS` | 60 seconds | Fallback for older Claude Code versions |
 | `RECENT_THRESHOLD_MS` | 1 hour | `--recent` flag filter threshold |
-
-### GitHub Polling
-
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| `PR_CACHE_TTL` | 1 minute | PR info cache duration |
-| `CI_POLL_INTERVAL_ACTIVE` | 30 seconds | Poll frequency for working sessions |
-| `CI_POLL_INTERVAL_IDLE` | 5 minutes | Poll frequency for idle sessions |
-| `PR_CACHE_MAX_SIZE` | 1000 | Maximum cached PR entries |
-| `PR_CACHE_ENTRY_TTL` | 30 minutes | Individual entry expiration |
 
 ### Session Scoring (UI)
 
@@ -120,7 +109,6 @@ ANTHROPIC_API_KEY=sk-ant-api03-...
 STREAM_HOST=0.0.0.0
 PORT=8080
 MAX_AGE_HOURS=48
-GITHUB_TOKEN=ghp_...
 ```
 
 ### UI connecting to remote daemon

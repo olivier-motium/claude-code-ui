@@ -5,7 +5,6 @@
  * This module re-exports from domain-specific config files:
  * - stream.ts: Stream server configuration
  * - timeouts.ts: Timeout constants
- * - github.ts: GitHub PR polling configuration
  * - scoring.ts: Session scoring weights
  * - ai.ts: AI generation and cache configuration
  * - content.ts: Content length limits
@@ -31,15 +30,6 @@ export {
   STALE_TIMEOUT_MS,
   RECENT_THRESHOLD_MS,
 } from "./timeouts.js";
-
-// GitHub
-export {
-  PR_CACHE_TTL,
-  CI_POLL_INTERVAL_ACTIVE,
-  CI_POLL_INTERVAL_IDLE,
-  PR_CACHE_MAX_SIZE,
-  PR_CACHE_ENTRY_TTL,
-} from "./github.js";
 
 // Scoring
 export {

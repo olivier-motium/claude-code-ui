@@ -92,9 +92,8 @@ cd packages/daemon && pnpm build       # TypeScript compile
   - States: `idle`, `working`, `waiting_for_approval`, `waiting_for_input`
   - Events: `USER_PROMPT`, `TOOL_RESULT`, `ASSISTANT_STREAMING`, `ASSISTANT_TOOL_USE`, `TURN_END`, timeout events
   - Maps 4 internal states to 3 UI states (working/waiting/idle)
-- **`server.ts`** - Durable Streams server wrapper. Publishes `Session` state to stream, handles PR update callbacks.
+- **`server.ts`** - Durable Streams server wrapper. Publishes `Session` state to stream.
 - **`summarizer/`** - AI-powered goal/summary generation via Claude Sonnet API (modular structure)
-- **`github.ts`** - PR/CI status polling and caching
 - **`git.ts`** - Git repo info extraction (branch, remote URL)
 - **`schema.ts`** - Zod schemas for session state, exported via `@claude-code-ui/daemon/schema`
 
@@ -156,7 +155,6 @@ The JSONL files contain discriminated union entries (`type` field):
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...  # Required for AI summaries
-GITHUB_TOKEN=ghp_...          # Optional: for PR/CI status (uses gh CLI auth if not set)
 ```
 
 ## Important Patterns

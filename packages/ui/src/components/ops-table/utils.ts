@@ -2,7 +2,7 @@
  * Utility functions for OpsTable components
  */
 
-import type { Session, CIStatus, SessionStatus } from "../../types/schema";
+import type { Session, SessionStatus } from "../../types/schema";
 import type { StatusFilter, StatusCounts } from "./types";
 import { getEffectiveStatus } from "../../lib/sessionStatus";
 import { STALE_THRESHOLD_MS } from "./constants";
@@ -51,42 +51,6 @@ export function formatGoal(session: Session, maxLength = 60): string {
     return text.slice(0, maxLength - 3) + "...";
   }
   return text;
-}
-
-/**
- * Get CI status icon
- */
-export function getCIStatusIcon(status: CIStatus): string {
-  switch (status) {
-    case "success":
-      return "✓";
-    case "failure":
-      return "✗";
-    case "running":
-    case "pending":
-      return "◎";
-    case "cancelled":
-      return "⊘";
-    default:
-      return "?";
-  }
-}
-
-/**
- * Get CI status color for Radix Badge
- */
-export function getCIStatusColor(status: CIStatus): "green" | "red" | "yellow" | "gray" {
-  switch (status) {
-    case "success":
-      return "green";
-    case "failure":
-      return "red";
-    case "running":
-    case "pending":
-      return "yellow";
-    default:
-      return "gray";
-  }
 }
 
 /**

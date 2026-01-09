@@ -58,8 +58,7 @@ The dashboard shows sessions in a Kanban-style board:
 
 Each session card shows:
 - AI-generated goal and summary
-- Current branch and PR status (if applicable)
-- CI status badge when a PR exists
+- Current git branch
 
 ## Verify It's Working
 
@@ -72,19 +71,6 @@ Each session card shows:
 2. Ask Claude to do something (e.g., "What files are in this directory?")
 
 3. The session should appear in the dashboard within seconds
-
-## Optional: GitHub Integration
-
-To see PR and CI status:
-
-1. Install the GitHub CLI: `brew install gh`
-2. Authenticate: `gh auth login`
-
-Or set a `GITHUB_TOKEN` environment variable:
-
-```bash
-echo "GITHUB_TOKEN=ghp_..." >> .env
-```
 
 ## Optional: Kitty Terminal Integration
 

@@ -12,8 +12,6 @@ export type {
   SessionStatus,
   FileStatusValue,
   RecentOutput,
-  CIStatus,
-  PRInfo,
   TerminalLink,
   EmbeddedPty,
 } from "@claude-code-ui/daemon/schema";

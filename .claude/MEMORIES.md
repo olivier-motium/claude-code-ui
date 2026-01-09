@@ -45,8 +45,7 @@ This allows multiple UI clients to stay in sync without polling.
 All daemon constants live in `packages/daemon/src/config.ts`:
 - Stream server config (STREAM_HOST, STREAM_PORT, STREAM_PATH)
 - Timeout constants (IDLE_TIMEOUT_MS, APPROVAL_TIMEOUT_MS, STALE_TIMEOUT_MS)
-- GitHub polling intervals (PR_CACHE_TTL, CI_POLL_INTERVAL_ACTIVE/IDLE)
-- Cache limits (PR_CACHE_MAX_SIZE, PR_CACHE_ENTRY_TTL)
+- Summary cache limits and TTLs
 
 This prevents magic numbers scattered across files and enables env var overrides.
 
