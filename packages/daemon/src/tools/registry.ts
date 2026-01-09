@@ -5,7 +5,8 @@
  * This eliminates hardcoded tool names scattered throughout the codebase.
  */
 
-import { COMMAND_TRUNCATE_LENGTH, SHORT_CONTENT_LENGTH } from "../config/index.js";
+// Import directly from content.ts to avoid pulling in Node-only config (stream.ts uses process.env)
+import { COMMAND_TRUNCATE_LENGTH, SHORT_CONTENT_LENGTH } from "../config/content.js";
 
 // =============================================================================
 // Types
