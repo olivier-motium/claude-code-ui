@@ -15,7 +15,6 @@ import {
 import { StatusWatcher } from "./status-watcher.js";
 import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
-import { generateAISummary, generateGoal } from "./summarizer/index.js";
 import {
   STREAM_HOST,
   STREAM_PORT,
@@ -114,7 +113,7 @@ export class StreamServer {
 
   /**
    * Build a complete Session object from SessionState.
-   * Fetches AI summaries and lookups, with optional overrides for specific fields.
+   * Uses file-based status for goal/summary (from hooks), with optional overrides.
    */
   private async buildSession(
     sessionState: SessionState,
@@ -123,11 +122,14 @@ export class StreamServer {
       terminalLink?: TerminalLink | null;
     } = {}
   ): Promise<Session> {
-    // Generate AI goal and summary (cached internally)
-    const [goal, summary] = await Promise.all([
-      generateGoal(sessionState),
-      generateAISummary(sessionState),
-    ]);
+    // Get file status first (needed for goal/summary)
+    const fileStatus = overrides.fileStatus !== undefined
+      ? overrides.fileStatus
+      : this.statusWatcher.getStatus(sessionState.cwd);
+
+    // Use file status for goal/summary (from hooks), fallback to original prompt
+    const goal = fileStatus?.task ?? sessionState.originalPrompt ?? "";
+    const summary = fileStatus?.summary ?? "";
 
     // Get terminal link: use override if provided, otherwise fetch from DB
     let terminalLink: TerminalLink | null;
@@ -143,11 +145,6 @@ export class StreamServer {
           }
         : null;
     }
-
-    // Get file status: use override if provided, otherwise fetch from watcher
-    const fileStatus = overrides.fileStatus !== undefined
-      ? overrides.fileStatus
-      : this.statusWatcher.getStatus(sessionState.cwd);
 
     return {
       sessionId: sessionState.sessionId,

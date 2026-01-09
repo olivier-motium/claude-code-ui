@@ -7,7 +7,6 @@ Get up and running with Claude Code Session Tracker in under 5 minutes.
 - **Node.js** 22.13.1 or later
 - **pnpm** 10.26.0 or later
 - **Claude Code CLI** installed and used at least once
-- **Anthropic API key** for AI-powered summaries
 
 ## Quick Start
 
@@ -19,17 +18,7 @@ cd claude-code-ui
 pnpm install
 ```
 
-### 2. Configure Environment
-
-Create a `.env` file in the root directory:
-
-```bash
-echo "ANTHROPIC_API_KEY=sk-ant-api03-..." > .env
-```
-
-> Get an API key from [console.anthropic.com](https://console.anthropic.com)
-
-### 3. Start the Application
+### 2. Start the Application
 
 ```bash
 pnpm start
@@ -120,10 +109,7 @@ pnpm watch --active   # Only non-idle sessions
 **Sessions not appearing?**
 - Verify Claude Code is running: `ls ~/.claude/projects/`
 - Check file permissions on `~/.claude/projects/`
-
-**AI summaries showing "Processing..."?**
-- Verify your API key: `echo $ANTHROPIC_API_KEY | head -c 10`
-- Check daemon logs for rate limiting errors
+- Note: Only sessions with `.claude/status.md` files (hook system) are shown
 
 **Port already in use?**
 - Check what's using port 4450: `lsof -i :4450`

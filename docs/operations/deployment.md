@@ -6,7 +6,6 @@ How to run Claude Code Session Tracker in production.
 
 - **Node.js** 22.13.1 or later
 - **pnpm** 10.26.0 or later
-- **Anthropic API key** for AI summaries
 
 ---
 
@@ -16,7 +15,6 @@ How to run Claude Code Session Tracker in production.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | - | Claude API key for AI summaries |
 | `STREAM_HOST` | No | `127.0.0.1` | Host to bind stream server |
 | `PORT` | No | `4450` | Port for stream server |
 | `MAX_AGE_HOURS` | No | `24` | Filter sessions older than this |
@@ -85,11 +83,6 @@ Create `~/Library/LaunchAgents/com.claude-code-ui.daemon.plist`:
   </array>
   <key>WorkingDirectory</key>
   <string>/path/to/claude-code-ui</string>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>ANTHROPIC_API_KEY</key>
-    <string>sk-ant-...</string>
-  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
@@ -120,7 +113,6 @@ After=network.target
 Type=simple
 WorkingDirectory=/path/to/claude-code-ui
 ExecStart=/usr/bin/pnpm serve
-Environment=ANTHROPIC_API_KEY=sk-ant-...
 Restart=always
 RestartSec=10
 
@@ -191,20 +183,14 @@ curl http://localhost:5173
 ### Daemon won't start
 
 1. Check Node.js version: `node --version` (need 22.13.1+)
-2. Check environment: `echo $ANTHROPIC_API_KEY`
-3. Check port: `lsof -i :4450`
+2. Check port: `lsof -i :4450`
 
 ### Sessions not appearing
 
 1. Verify Claude Code is running: `ls ~/.claude/projects/`
 2. Check file permissions on `~/.claude/projects/`
 3. Run `pnpm watch` to debug file detection
-
-### AI summaries failing
-
-1. Verify API key: `echo $ANTHROPIC_API_KEY | head -c 10`
-2. Check Anthropic API status
-3. Review daemon logs for rate limiting errors
+4. Note: Only sessions with `.claude/status.md` files (hook system) are shown
 
 ---
 

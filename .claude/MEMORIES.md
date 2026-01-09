@@ -10,10 +10,9 @@ Documentation lives in `docs/` folder with `docs/index.md` as the entry point.
 | `docs/getting-started.md` | Onboarding quickstart |
 | `docs/cli-reference.md` | CLI commands and flags |
 | `docs/ui-components.md` | React component hierarchy |
-| `docs/summarizer.md` | AI summarization service |
 | `docs/operations/deployment.md` | Production deployment |
 | `docs/operations/configuration.md` | Env vars and internal constants |
-| `docs/api/daemon-api.md` | github.ts, git.ts, summarizer.ts APIs |
+| `docs/api/daemon-api.md` | Daemon APIs (status-watcher, git, etc.) |
 | `docs/guides/testing.md` | Manual testing strategies |
 
 ## CLI Flags
@@ -56,21 +55,16 @@ Shared utilities live in `packages/daemon/src/utils/`:
 - `errors.ts` - standardized error message extraction
 - `type-guards.ts` - type narrowing guards (isUserEntry, isError, getErrorMessage)
 
-### Summarizer Module Structure
-Summarizer is split into `packages/daemon/src/summarizer/`:
-- `index.ts` - barrel exports
-- `summarizer.ts` - main generateAISummary, generateGoal
-- `context-extraction.ts` - extractContext, extractEarlyContext
-- `summaries.ts` - getWorkingSummary, getFallbackSummary
-- `cache.ts` - evictStaleEntries, generateContentHash
-- `text-utils.ts` - cleanGoalText
+### Summarizer Removal (Jan 2026)
+AI summarizer module deleted entirely - goals/summaries now come from file-based status.
 
-### Cache Eviction Pattern
-Caches use LRU-style eviction with TTL (see summarizer.ts):
-```typescript
-interface CacheEntry { value: T; timestamp: number; }
-// Evict before lookup: expired entries + oldest if over maxSize
-```
+**Why removed:**
+- File-based status from hooks provides deterministic goal/summary
+- No ANTHROPIC_API_KEY required
+- Eliminates "Goal generation timed out" warnings
+- Simpler architecture: one source of truth
+
+**Migration:** `server.ts` now uses `fileStatus?.task` for goal and `fileStatus?.summary` for summary, falling back to `originalPrompt` if no status file exists.
 
 ### Security: Command Injection Prevention
 Use `execFile` with array args instead of `exec` with template strings:

@@ -8,7 +8,6 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { Box } from "@radix-ui/themes";
 import { radixDarkTheme, terminalStyles } from "./theme";
 
 export interface TerminalProps {
@@ -16,6 +15,8 @@ export interface TerminalProps {
   wsUrl: string;
   /** Authentication token for WebSocket */
   wsToken: string;
+  /** Called when WebSocket connects successfully */
+  onConnect?: () => void;
   /** Called when WebSocket disconnects */
   onDisconnect?: () => void;
   /** Called when terminal is resized */
@@ -37,6 +38,7 @@ interface WsMessage {
 export function Terminal({
   wsUrl,
   wsToken,
+  onConnect,
   onDisconnect,
   onResize,
   onError,
@@ -90,6 +92,7 @@ export function Terminal({
 
     ws.onopen = () => {
       console.log("[Terminal] WebSocket connected");
+      onConnect?.();
 
       // Send initial resize
       if (fitAddonRef.current) {
@@ -138,7 +141,7 @@ export function Terminal({
       }
       wsRef.current = null;
     };
-  }, [wsUrl, wsToken, onDisconnect, onError]);
+  }, [wsUrl, wsToken, onConnect, onDisconnect, onError]);
 
   // Handle resize
   const handleResize = useCallback(() => {
@@ -179,14 +182,10 @@ export function Terminal({
   }, [handleResize]);
 
   return (
-    <Box
+    <div
       ref={containerRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        padding: "8px",
-        backgroundColor: radixDarkTheme.background,
-      }}
+      className="w-full h-full p-2"
+      style={{ backgroundColor: radixDarkTheme.background }}
     />
   );
 }

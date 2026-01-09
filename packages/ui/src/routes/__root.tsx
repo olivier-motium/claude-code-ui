@@ -1,6 +1,5 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
-import { Theme } from "@radix-ui/themes";
 import { getSessionsDb } from "../data/sessionsDb";
 
 export const Route = createRootRoute({
@@ -14,15 +13,9 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <Theme
-      accentColor="yellow"
-      grayColor="slate"
-      radius="medium"
-      scaling="100%"
-      appearance="dark"
-    >
+    <div className="dark min-h-screen bg-background text-foreground">
       <Outlet />
       <TanStackRouterDevtools />
-    </Theme>
+    </div>
   );
 }

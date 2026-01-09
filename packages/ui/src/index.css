@@ -1,3 +1,28 @@
+/* Tailwind v4 CSS-first configuration */
+@import "tailwindcss";
+
+/* Custom theme configuration */
+@theme {
+  /* Fonts */
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-heading: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", monospace;
+
+  /* Status colors */
+  --color-status-working: hsl(142 71% 45%);
+  --color-status-waiting: hsl(43 96% 56%);
+  --color-status-error: hsl(0 84% 60%);
+  --color-status-idle: hsl(215 16% 47%);
+
+  /* Custom animations */
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  }
+}
+
 /* Import xterm.js styles */
 @import "@xterm/xterm/css/xterm.css";
 
@@ -377,12 +402,6 @@ body {
 /* Fleet Command Main Container */
 .fleet-command {
   display: grid;
-  grid-template-areas:
-    "header header header"
-    "roster viewport intel"
-    "ticker ticker ticker";
-  grid-template-columns: 288px 1fr 320px;
-  grid-template-rows: 48px 1fr 28px;
   height: 100vh;
   width: 100%;
   background: var(--nb-black);
@@ -390,6 +409,64 @@ body {
   font-family: var(--code-font-family);
   overflow: hidden;
   user-select: none;
+}
+
+/* Ops Mode (default): OpsTable center, TerminalDock bottom */
+.fleet-command--ops {
+  grid-template-areas:
+    "header header header"
+    "filters filters filters"
+    "roster table intel"
+    "dock dock dock"
+    "ticker ticker ticker";
+  grid-template-columns: 220px 1fr 280px;
+  grid-template-rows: 48px 40px 1fr 280px 28px;
+}
+
+/* Focus Mode: Terminal center, mini roster */
+.fleet-command--focus {
+  grid-template-areas:
+    "header header header"
+    "roster viewport intel"
+    "ticker ticker ticker";
+  grid-template-columns: 180px 1fr 280px;
+  grid-template-rows: 48px 1fr 28px;
+}
+
+/* StatusStrip filter bar */
+.fleet-filters {
+  grid-area: filters;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--nb-black-light);
+  border-bottom: 1px solid var(--nb-border);
+}
+
+/* OpsTable zone */
+.fleet-table {
+  grid-area: table;
+  display: flex;
+  flex-direction: column;
+  background: var(--nb-terminal);
+  overflow: hidden;
+}
+
+/* TerminalDock zone */
+.fleet-dock {
+  grid-area: dock;
+  background: var(--nb-terminal);
+  border-top: 1px solid var(--nb-border);
+  overflow: hidden;
+}
+
+.fleet-dock__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--nb-text-muted);
+  font-size: 12px;
 }
 
 /* Zone: Command Bar (Top Header) */
@@ -467,6 +544,105 @@ body {
   font-size: 10px;
 }
 
+/* Mode Toggle */
+.fleet-command-bar__mode-toggle {
+  display: flex;
+  background: var(--nb-terminal);
+  border: 1px solid var(--nb-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fleet-command-bar__mode-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--nb-text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fleet-command-bar__mode-btn:hover {
+  color: var(--nb-text);
+}
+
+.fleet-command-bar__mode-btn--active {
+  background: var(--nb-yellow);
+  color: var(--nb-black);
+}
+
+/* Focus Mode Header */
+.fleet-command-bar--focus {
+  background: var(--nb-sidebar);
+}
+
+.fleet-command-bar__back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--nb-terminal);
+  border: 1px solid var(--nb-border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nb-text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fleet-command-bar__back:hover {
+  background: var(--nb-black-light);
+  border-color: var(--nb-yellow);
+  color: var(--nb-yellow);
+}
+
+.fleet-command-bar__session-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fleet-command-bar__session-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nb-text-bright);
+}
+
+.fleet-command-bar__branch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--nb-text-dim);
+}
+
+.fleet-command-bar__status-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.fleet-command-bar__status-badge--working {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--nb-green);
+}
+
+.fleet-command-bar__status-badge--waiting {
+  background: rgba(234, 179, 8, 0.2);
+  color: var(--nb-yellow);
+}
+
+.fleet-command-bar__status-badge--idle {
+  background: rgba(63, 63, 70, 0.5);
+  color: var(--nb-text-dim);
+}
+
 /* Zone A: The Roster (Left Sidebar) */
 .fleet-roster {
   grid-area: roster;
@@ -525,6 +701,19 @@ body {
 .fleet-roster__list {
   flex: 1;
   overflow-y: auto;
+}
+
+/* Compact Roster (Focus Mode) */
+.fleet-roster--compact {
+  width: 180px;
+}
+
+.fleet-roster--compact .fleet-roster-item {
+  padding: 8px 12px;
+}
+
+.fleet-roster--compact .fleet-roster-item__meta {
+  display: none;
 }
 
 /* Roster Item */

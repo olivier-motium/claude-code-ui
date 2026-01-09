@@ -19,6 +19,7 @@
     /* Path mapping for monorepo packages */
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./src/*"],
       "@claude-code-ui/daemon/schema": ["../daemon/src/schema.ts"]
     },
 

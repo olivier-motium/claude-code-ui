@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Box, Flex, Text, Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui/button";
 import { Terminal } from "../terminal/Terminal";
 import { SessionHeader } from "./SessionHeader";
 import { createPty, getPty, type PtyInfo } from "../../lib/api";
@@ -123,7 +123,7 @@ export function TerminalDock({ session, onClose }: TerminalDockProps) {
   const { ptyInfo, isLoading, error, isConnected } = state;
 
   return (
-    <Box className="terminal-dock">
+    <div className="terminal-dock">
       {/* Header */}
       <SessionHeader
         session={session}
@@ -133,43 +133,36 @@ export function TerminalDock({ session, onClose }: TerminalDockProps) {
       />
 
       {/* Terminal body */}
-      <Box className="terminal-dock-body" style={{ height: "280px" }}>
+      <div className="terminal-dock-body h-[280px]">
         {isLoading ? (
-          <Flex align="center" justify="center" style={{ height: "100%" }}>
-            <Text color="gray" size="2">
+          <div className="flex items-center justify-center h-full">
+            <span className="text-sm text-muted-foreground">
               Connecting to terminal...
-            </Text>
-          </Flex>
+            </span>
+          </div>
         ) : error ? (
-          <Flex
-            direction="column"
-            align="center"
-            justify="center"
-            gap="3"
-            style={{ height: "100%" }}
-          >
-            <Text color="red" size="2">
-              {error}
-            </Text>
-            <Button size="1" variant="soft" onClick={handleRetry}>
+          <div className="flex flex-col items-center justify-center gap-3 h-full">
+            <span className="text-sm text-destructive">{error}</span>
+            <Button size="sm" variant="outline" onClick={handleRetry}>
               Retry
             </Button>
-          </Flex>
+          </div>
         ) : ptyInfo ? (
           <Terminal
             wsUrl={ptyInfo.wsUrl}
             wsToken={ptyInfo.wsToken}
+            onConnect={handleConnect}
             onDisconnect={handleDisconnect}
             onError={handleError}
           />
         ) : (
-          <Flex align="center" justify="center" style={{ height: "100%" }}>
-            <Text color="gray" size="2">
+          <div className="flex items-center justify-center h-full">
+            <span className="text-sm text-muted-foreground">
               No terminal available
-            </Text>
-          </Flex>
+            </span>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

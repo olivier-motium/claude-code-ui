@@ -44,7 +44,7 @@ The meta index contains a **Document Map** showing exactly when to read each doc
 
 ## Project Overview
 
-Claude Code Session Tracker - A real-time dashboard for monitoring Claude Code sessions across multiple projects. Watches `~/.claude/projects/` for session log changes, derives status using XState, generates AI summaries, and streams updates to a React UI via Durable Streams.
+Claude Code Session Tracker - A real-time dashboard for monitoring Claude Code sessions across multiple projects. Watches `~/.claude/projects/` for session log changes, derives status, and streams updates to a React UI via Durable Streams. Goals and summaries come from file-based status (`.claude/status.md`) written by Claude Code hooks.
 
 ## Development Commands
 
@@ -93,7 +93,7 @@ cd packages/daemon && pnpm build       # TypeScript compile
   - Events: `USER_PROMPT`, `TOOL_RESULT`, `ASSISTANT_STREAMING`, `ASSISTANT_TOOL_USE`, `TURN_END`, timeout events
   - Maps 4 internal states to 3 UI states (working/waiting/idle)
 - **`server.ts`** - Durable Streams server wrapper. Publishes `Session` state to stream.
-- **`summarizer/`** - AI-powered goal/summary generation via Claude Sonnet API (modular structure)
+- **`status-watcher.ts`** - Watches `.claude/status.md` files for goal/summary from hooks
 - **`git.ts`** - Git repo info extraction (branch, remote URL)
 - **`schema.ts`** - Zod schemas for session state, exported via `@claude-code-ui/daemon/schema`
 
@@ -150,12 +150,6 @@ The JSONL files contain discriminated union entries (`type` field):
 - Let Radix and capsize handle typography sizing - don't set fontSize or lineHeight manually
 - Use Radix's style props (size, color, variant, etc.) instead of inline styles
 - For code/monospace content, use the `Code` component
-
-## Environment Variables
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-...  # Required for AI summaries
-```
 
 ## Important Patterns
 

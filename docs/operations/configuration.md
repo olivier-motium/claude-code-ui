@@ -4,13 +4,7 @@ Complete reference for all environment variables and tunable constants.
 
 ## Environment Variables
 
-### Required
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `ANTHROPIC_API_KEY` | Claude API key for AI summaries | `sk-ant-api03-...` |
-
-### Optional - Daemon
+### Daemon
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -54,22 +48,6 @@ These constants are defined in `packages/daemon/src/config.ts` and affect daemon
 | `PENDING_TOOL_BONUS` | 30 | Bonus for pending tool approval |
 | `DECAY_HALF_LIFE_MINUTES` | 30 | Activity score decay rate |
 
-### Summary Cache
-
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| `SUMMARY_CACHE_MAX_SIZE` | 500 | Maximum cached summary entries |
-| `SUMMARY_CACHE_TTL_MS` | 30 minutes | Summary cache entry TTL |
-| `GOAL_CACHE_MAX_SIZE` | 500 | Maximum cached goal entries |
-| `GOAL_CACHE_TTL_MS` | 30 minutes | Goal cache entry TTL |
-
-### External Call Timeouts
-
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| `EXTERNAL_CALL_TIMEOUT_MS` | 30 seconds | Timeout for Anthropic API calls |
-| `GH_CLI_TIMEOUT_MS` | 15 seconds | Timeout for gh CLI operations |
-
 ### Kitty Terminal Control
 
 | Constant | Value | Purpose |
@@ -96,16 +74,12 @@ These constants are defined in `packages/daemon/src/config.ts` and affect daemon
 
 ### Development (default)
 
-```bash
-# .env
-ANTHROPIC_API_KEY=sk-ant-api03-...
-```
+No configuration needed - uses defaults.
 
 ### Production (custom host/port)
 
 ```bash
 # .env
-ANTHROPIC_API_KEY=sk-ant-api03-...
 STREAM_HOST=0.0.0.0
 PORT=8080
 MAX_AGE_HOURS=48

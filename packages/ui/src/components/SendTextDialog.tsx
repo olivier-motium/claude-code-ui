@@ -3,7 +3,17 @@
  */
 
 import { useState } from "react";
-import { Dialog, Button, TextArea, Checkbox, Flex, Text } from "@radix-ui/themes";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as api from "../lib/api";
 
 interface SendTextDialogProps {
@@ -40,42 +50,49 @@ export function SendTextDialog({ sessionId, open, onOpenChange }: SendTextDialog
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content maxWidth="450px">
-        <Dialog.Title>Send to Terminal</Dialog.Title>
-        <Dialog.Description size="2" mb="4">
-          Text will be sent to the linked kitty terminal.
-        </Dialog.Description>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[450px]">
+        <DialogHeader>
+          <DialogTitle>Send to Terminal</DialogTitle>
+          <DialogDescription>
+            Text will be sent to the linked kitty terminal.
+          </DialogDescription>
+        </DialogHeader>
 
-        <Flex direction="column" gap="3">
-          <TextArea
+        <div className="flex flex-col gap-3">
+          <Textarea
             placeholder="Enter text to send..."
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={4}
+            className="resize-none"
           />
 
-          <Flex align="center" gap="2">
+          <div className="flex items-center gap-2">
             <Checkbox
+              id="submit-checkbox"
               checked={submit}
               onCheckedChange={(checked) => setSubmit(Boolean(checked))}
             />
-            <Text size="2">Press Enter after sending</Text>
-          </Flex>
-        </Flex>
+            <label
+              htmlFor="submit-checkbox"
+              className="text-sm text-muted-foreground cursor-pointer"
+            >
+              Press Enter after sending
+            </label>
+          </div>
+        </div>
 
-        <Flex gap="3" mt="4" justify="end">
-          <Dialog.Close>
-            <Button variant="soft" color="gray">
-              Cancel
-            </Button>
-          </Dialog.Close>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={handleSend} disabled={loading || !text.trim()}>
             {loading ? "Sending..." : "Send"}
           </Button>
-        </Flex>
-      </Dialog.Content>
-    </Dialog.Root>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

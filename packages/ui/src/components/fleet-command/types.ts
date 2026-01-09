@@ -4,6 +4,9 @@
 
 import type { Session } from "../../types/schema";
 
+/** View mode for the Fleet Command layout */
+export type ViewMode = "ops" | "focus";
+
 /** Event types for the ticker */
 export type AgentEventType =
   | "status_change"
@@ -41,6 +44,8 @@ export interface RosterProps {
   onSelectSession: (sessionId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  /** Compact mode for focus view (narrower width) */
+  compact?: boolean;
 }
 
 /** Props for RosterItem */
@@ -70,4 +75,9 @@ export interface EventTickerProps {
 export interface CommandBarProps {
   sessionCount: number;
   workingCount: number;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  /** Selected session in focus mode (null in ops mode) */
+  selectedSession: Session | null;
+  onBackToOps: () => void;
 }

@@ -9,8 +9,18 @@
 
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { DropdownMenu, IconButton } from "@radix-ui/themes";
-import { DotsVerticalIcon } from "@radix-ui/react-icons";
+import { MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import * as api from "../../lib/api";
 import type { SessionActionsProps } from "./types";
 
@@ -71,56 +81,58 @@ export function SessionActions({ session, onSendText }: SessionActionsProps) {
   };
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger>
-        <IconButton
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
           variant="ghost"
-          size="1"
+          size="icon-sm"
           onClick={(e) => e.stopPropagation()}
           disabled={loading}
+          className="h-7 w-7"
         >
-          <DotsVerticalIcon />
-        </IconButton>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content onClick={(e) => e.stopPropagation()}>
+          <MoreVertical className="h-4 w-4" />
+          <span className="sr-only">Actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         {/* Primary: Open embedded terminal */}
-        <DropdownMenu.Item onClick={handleOpenTerminal}>
+        <DropdownMenuItem onClick={handleOpenTerminal}>
           Open terminal
-        </DropdownMenu.Item>
+        </DropdownMenuItem>
 
         {/* Kitty submenu */}
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger>Kitty...</DropdownMenu.SubTrigger>
-          <DropdownMenu.SubContent>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>Kitty...</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
             {session.terminalLink ? (
               <>
-                <DropdownMenu.Item onClick={handleKittyFocus}>
+                <DropdownMenuItem onClick={handleKittyFocus}>
                   Focus kitty window
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item color="red" onClick={handleKittyUnlink}>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleKittyUnlink}>
                   Unlink kitty
-                </DropdownMenu.Item>
+                </DropdownMenuItem>
               </>
             ) : (
               <>
-                <DropdownMenu.Item onClick={handleKittyOpen}>
+                <DropdownMenuItem onClick={handleKittyOpen}>
                   Open in kitty
-                </DropdownMenu.Item>
-                <DropdownMenu.Item onClick={handleKittyLink}>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleKittyLink}>
                   Link existing kitty window...
-                </DropdownMenu.Item>
+                </DropdownMenuItem>
               </>
             )}
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Sub>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         {/* Send text - works for both */}
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item onClick={handleSendText}>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSendText}>
           Send message...
-        </DropdownMenu.Item>
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

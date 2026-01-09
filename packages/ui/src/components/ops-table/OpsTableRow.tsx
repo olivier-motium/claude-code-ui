@@ -75,15 +75,14 @@ export function OpsTableRow({ session, isSelected, onSelect }: OpsTableRowProps)
             )}
           </Box>
 
-          {/* Pending tool */}
-          <Box style={{ width: "80px" }}>
+          {/* Pending tool - show tool name only */}
+          <Box style={{ width: "80px", overflow: "hidden" }}>
             {session.pendingTool ? (
-              <Flex align="center" gap="1">
-                <Text size="1">{TOOL_ICONS[session.pendingTool.tool] || "🔧"}</Text>
-                <Code size="1" color="orange" variant="soft">
-                  {formatTarget(session.pendingTool.target)}
+              <Tooltip content={session.pendingTool.target}>
+                <Code size="1" color="orange" variant="soft" truncate style={{ maxWidth: "100%" }}>
+                  {session.pendingTool.tool}
                 </Code>
-              </Flex>
+              </Tooltip>
             ) : (
               <Text size="1" color="gray">-</Text>
             )}

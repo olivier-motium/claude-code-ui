@@ -2,6 +2,7 @@
  * Roster - Left sidebar showing all agents
  *
  * Zone A of the Fleet Command layout
+ * Supports compact mode for focus view
  */
 
 import { Search } from "lucide-react";
@@ -14,6 +15,7 @@ export function Roster({
   onSelectSession,
   searchQuery,
   onSearchChange,
+  compact = false,
 }: RosterProps) {
   // Filter sessions by search query
   const filteredSessions = sessions.filter((session) => {
@@ -27,24 +29,29 @@ export function Roster({
     );
   });
 
+  const rosterClass = compact ? "fleet-roster fleet-roster--compact" : "fleet-roster";
+
   return (
-    <aside className="fleet-roster">
-      <div className="fleet-roster__search">
-        <div className="fleet-roster__search-wrapper">
-          <Search className="fleet-roster__search-icon" />
-          <input
-            type="text"
-            className="fleet-roster__search-input"
-            placeholder="Filter Units..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+    <aside className={rosterClass}>
+      {/* Hide search in compact mode */}
+      {!compact && (
+        <div className="fleet-roster__search">
+          <div className="fleet-roster__search-wrapper">
+            <Search className="fleet-roster__search-icon" />
+            <input
+              type="text"
+              className="fleet-roster__search-input"
+              placeholder="Filter Units..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="fleet-roster__list">
         {filteredSessions.length === 0 ? (
-          <div style={{ padding: 24, textAlign: "center", color: "var(--nb-text-muted)" }}>
+          <div style={{ padding: compact ? 12 : 24, textAlign: "center", color: "var(--nb-text-muted)" }}>
             {searchQuery ? "No matching agents" : "No active agents"}
           </div>
         ) : (
