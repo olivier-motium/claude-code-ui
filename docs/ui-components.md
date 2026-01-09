@@ -1,11 +1,11 @@
 # UI Components
 
-The React UI is built with TanStack Router, Radix UI Themes, and custom Nano Banana Pro styling.
+The React UI is built with TanStack Router, shadcn/ui (Radix primitives + Tailwind CSS v4), TanStack Table, and custom Nano Banana Pro styling.
 
 ## Component Hierarchy (Fleet Command)
 
 ```
-__root.tsx (Radix Theme provider)
+__root.tsx (dark theme wrapper)
 └── index.tsx (Fleet Command Page)
     └── FleetCommand (4-zone operator console)
         ├── CommandBar (top header)
@@ -293,12 +293,27 @@ function FleetCommandPage() {
 
 ---
 
-## Legacy Components (Deprecated)
+## Component Library
 
-The following components from the old OpsTable/Command Center design are still in the codebase but no longer used:
+The UI uses shadcn/ui components built on Radix primitives with Tailwind styling:
 
-- `components/ops-table/` - Replaced by Roster
-- `components/StatusStrip.tsx` - Replaced by CommandBar
-- `components/terminal-dock/` - Replaced by Viewport
+| Component | Location | Usage |
+|-----------|----------|-------|
+| Button | `components/ui/button.tsx` | All buttons (actions, navigation) |
+| Dialog | `components/ui/dialog.tsx` | SendTextDialog modal |
+| DropdownMenu | `components/ui/dropdown-menu.tsx` | SessionActions menu |
+| Checkbox | `components/ui/checkbox.tsx` | Form checkboxes |
+| Textarea | `components/ui/textarea.tsx` | Text input areas |
+| Table | `components/ui/table.tsx` | DataTable base |
 
-These may be removed in a future cleanup.
+### DataTable (TanStack Table)
+
+**Location:** `components/data-table/`
+
+The DataTable replaces the old OpsTable with TanStack Table v8 architecture:
+
+| File | Purpose |
+|------|---------|
+| `DataTable.tsx` | Main table component with sorting |
+| `columns.tsx` | Column definitions |
+| `cells/*.tsx` | Individual cell renderers |

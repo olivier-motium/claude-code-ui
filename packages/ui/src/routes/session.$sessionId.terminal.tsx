@@ -9,8 +9,9 @@
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useCallback } from "react";
-import { Box, Flex, Text, Badge, IconButton, Spinner } from "@radix-ui/themes";
-import { Cross2Icon, ArrowLeftIcon } from "@radix-ui/react-icons";
+import { ArrowLeft, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Terminal } from "../components/terminal";
 import { usePtySession } from "../hooks/usePtySession";
 import { useSessions } from "../hooks/useSessions";
@@ -18,6 +19,12 @@ import { useSessions } from "../hooks/useSessions";
 export const Route = createFileRoute("/session/$sessionId/terminal")({
   component: TerminalPage,
 });
+
+const STATUS_STYLES = {
+  working: "bg-status-working/10 text-status-working border-status-working/20",
+  waiting: "bg-status-waiting/10 text-status-waiting border-status-waiting/20",
+  idle: "bg-status-idle/10 text-status-idle border-status-idle/20",
+} as const;
 
 function TerminalPage() {
   const { sessionId } = Route.useParams();
@@ -50,98 +57,79 @@ function TerminalPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleClose]);
 
-  const statusColor =
-    session?.status === "working"
-      ? "green"
-      : session?.status === "waiting"
-        ? "yellow"
-        : "gray";
+  const status = session?.status as keyof typeof STATUS_STYLES | undefined;
 
   // Get directory name for display
   const dirName = session?.cwd.split("/").pop() || "Terminal";
 
   return (
-    <Box
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        backgroundColor: "var(--gray-1)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="fixed inset-0 z-[1000] bg-background flex flex-col">
       {/* Header */}
-      <Flex
-        justify="between"
-        align="center"
-        px="4"
-        py="3"
-        style={{
-          borderBottom: "1px solid var(--gray-a5)",
-          backgroundColor: "var(--gray-2)",
-          flexShrink: 0,
-        }}
-      >
-        <Flex align="center" gap="3">
-          <IconButton
+      <div className="flex justify-between items-center px-4 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-3">
+          <Button
             variant="ghost"
-            color="gray"
+            size="icon"
             onClick={handleClose}
             title="Back to dashboard"
           >
-            <ArrowLeftIcon width="18" height="18" />
-          </IconButton>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
 
-          <Flex direction="column" gap="1">
-            <Flex align="center" gap="2">
-              <Text size="3" weight="medium">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-medium">
                 {session?.goal || dirName}
-              </Text>
-              {session && (
-                <Badge color={statusColor} size="1">
+              </span>
+              {session && status && (
+                <span
+                  className={cn(
+                    "inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border",
+                    STATUS_STYLES[status]
+                  )}
+                >
                   {session.status}
-                </Badge>
+                </span>
               )}
-            </Flex>
-            <Text size="1" color="gray">
+            </div>
+            <span className="text-xs text-muted-foreground">
               {session?.cwd.replace(/^\/Users\/[^/]+/, "~") || sessionId}
-            </Text>
-          </Flex>
-        </Flex>
+            </span>
+          </div>
+        </div>
 
-        <Flex align="center" gap="2">
-          <Text size="1" color="gray">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
             Press Esc to close
-          </Text>
-          <IconButton variant="ghost" color="gray" onClick={handleClose}>
-            <Cross2Icon width="18" height="18" />
-          </IconButton>
-        </Flex>
-      </Flex>
+          </span>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
 
       {/* Terminal area */}
-      <Box style={{ flex: 1, overflow: "hidden" }}>
+      <div className="flex-1 overflow-hidden">
         {isLoading && (
-          <Flex align="center" justify="center" style={{ height: "100%" }}>
-            <Flex direction="column" align="center" gap="3">
-              <Spinner size="3" />
-              <Text color="gray">Connecting to terminal...</Text>
-            </Flex>
-          </Flex>
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="text-muted-foreground">
+                Connecting to terminal...
+              </span>
+            </div>
+          </div>
         )}
 
         {error && (
-          <Flex align="center" justify="center" style={{ height: "100%" }}>
-            <Flex direction="column" align="center" gap="3">
-              <Text color="red" size="3">
-                {error}
-              </Text>
-              <Text color="gray" size="2">
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-destructive text-lg">{error}</span>
+              <span className="text-muted-foreground text-sm">
                 Make sure the daemon is running and try again.
-              </Text>
-            </Flex>
-          </Flex>
+              </span>
+            </div>
+          </div>
         )}
 
         {ptyInfo && (
@@ -152,7 +140,7 @@ function TerminalPage() {
             onError={(err) => console.error("[Terminal] Error:", err)}
           />
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

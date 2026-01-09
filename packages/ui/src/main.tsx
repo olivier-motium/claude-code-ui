@@ -4,7 +4,6 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import "@fontsource-variable/space-grotesk";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
-import "@radix-ui/themes/styles.css";
 import "./index.css";
 
 import { routeTree } from "./routeTree.gen";

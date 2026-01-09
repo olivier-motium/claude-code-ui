@@ -8,8 +8,9 @@
  * - Close button
  */
 
-import { Flex, Text, Code, Badge, IconButton } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getEffectiveStatus } from "../../lib/sessionStatus";
 import type { Session } from "../../types/schema";
 
@@ -20,10 +21,16 @@ interface SessionHeaderProps {
   onClose: () => void;
 }
 
-const STATUS_COLORS = {
-  working: "green",
-  waiting: "orange",
-  idle: "gray",
+const STATUS_STYLES = {
+  working: "bg-status-working/10 text-status-working border-status-working/20",
+  waiting: "bg-status-waiting/10 text-status-waiting border-status-waiting/20",
+  idle: "bg-status-idle/10 text-status-idle border-status-idle/20",
+} as const;
+
+const STATUS_LABELS = {
+  working: "Working",
+  waiting: "Waiting",
+  idle: "Idle",
 } as const;
 
 export function SessionHeader({
@@ -36,52 +43,57 @@ export function SessionHeader({
   const goalText = session.goal || session.originalPrompt.slice(0, 50);
 
   return (
-    <Flex
-      className="terminal-dock-header"
-      align="center"
-      justify="between"
-      gap="3"
-    >
-      <Flex align="center" gap="3" style={{ flex: 1, minWidth: 0 }}>
+    <div className="terminal-dock-header flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Status badge */}
-        <Badge color={STATUS_COLORS[status]} variant="soft" size="1">
-          {status === "working" ? "Working" : status === "waiting" ? "Waiting" : "Idle"}
-        </Badge>
+        <span
+          className={cn(
+            "inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border",
+            STATUS_STYLES[status]
+          )}
+        >
+          {STATUS_LABELS[status]}
+        </span>
 
         {/* Goal text */}
-        <Text size="2" weight="medium" truncate style={{ flex: 1 }}>
+        <span className="text-sm font-medium truncate flex-1">
           {goalText}
-        </Text>
+        </span>
 
         {/* Branch */}
         {session.gitBranch && (
-          <Code size="1" variant="soft" color="gray">
+          <code className="px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded font-mono">
             {session.gitBranch.length > 20
               ? session.gitBranch.slice(0, 17) + "..."
               : session.gitBranch}
-          </Code>
+          </code>
         )}
 
         {/* Connection status */}
-        <Badge
-          color={isLoading ? "yellow" : isConnected ? "green" : "red"}
-          variant="soft"
-          size="1"
+        <span
+          className={cn(
+            "inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border",
+            isLoading
+              ? "bg-status-waiting/10 text-status-waiting border-status-waiting/20"
+              : isConnected
+              ? "bg-status-working/10 text-status-working border-status-working/20"
+              : "bg-status-error/10 text-status-error border-status-error/20"
+          )}
         >
           {isLoading ? "Connecting..." : isConnected ? "Connected" : "Disconnected"}
-        </Badge>
-      </Flex>
+        </span>
+      </div>
 
       {/* Close button */}
-      <IconButton
+      <Button
         variant="ghost"
-        size="1"
-        color="gray"
+        size="icon-sm"
         onClick={onClose}
         title="Close terminal"
+        className="h-7 w-7"
       >
-        <Cross2Icon />
-      </IconButton>
-    </Flex>
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }

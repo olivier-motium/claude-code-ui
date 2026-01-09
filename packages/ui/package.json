@@ -22,7 +22,6 @@
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@radix-ui/themes": "^3.2.1",
     "@tanstack/db": "^0.5.17",
     "@tanstack/react-db": "^0.1.61",
     "@tanstack/react-router": "^1.120.5",

@@ -100,11 +100,12 @@ cd packages/daemon && pnpm build       # TypeScript compile
 ### UI (`packages/ui`)
 
 - **TanStack Router** for routing with file-based routes in `src/routes/`
-- **Radix UI Themes** for all components (never use plain HTML with custom styles)
+- **shadcn/ui + Tailwind CSS v4** for components (Radix primitives + Tailwind utilities)
+- **TanStack Table** for DataTable component
 - **TanStack DB** for reactive local state from Durable Streams
 - **`src/data/sessionsDb.ts`** - Singleton StreamDB connection to daemon
 - **`src/hooks/useSessions.ts`** - React hook for session data
-- **`src/components/`** - KanbanColumn, RepoSection, SessionCard
+- **`src/components/`** - Fleet Command (Roster, Viewport, TacticalIntel, EventTicker), DataTable
 
 ## Key Data Types
 
@@ -146,10 +147,10 @@ The JSONL files contain discriminated union entries (`type` field):
 
 ## UI Guidelines
 
-- Always use Radix UI components - never use plain HTML elements with custom styles
-- Let Radix and capsize handle typography sizing - don't set fontSize or lineHeight manually
-- Use Radix's style props (size, color, variant, etc.) instead of inline styles
-- For code/monospace content, use the `Code` component
+- Use shadcn/ui components from `src/components/ui/` for standard UI elements
+- Style with Tailwind utilities using the `cn()` helper for conditional classes
+- Use CSS custom properties from Nano Banana Pro theme (`:root` variables in `index.css`)
+- For code/monospace content, use the `font-mono` Tailwind class or `Code` component
 
 ## Important Patterns
 
@@ -184,6 +185,7 @@ Uses XState for deterministic state transitions. The machine processes all log e
 | Streaming | @durable-streams/* |
 | UI Framework | React 19 |
 | Routing | TanStack Router |
-| UI Components | Radix UI Themes |
+| UI Components | shadcn/ui + Tailwind CSS v4 |
+| Tables | TanStack Table v8 |
 | Validation | Zod |
 | Build | Vite |
