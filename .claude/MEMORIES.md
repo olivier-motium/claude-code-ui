@@ -200,3 +200,14 @@ The `ws` WebSocketServer's `path` option only matches exact paths. Don't use `pa
 - SessionWatcher test reads real data instead of fixtures
 - Parser test missing test directory setup
 These are unrelated to cache/timeout refactoring.
+
+## QA Audit (Jan 2026)
+
+Full audit in `~/.claude/plans/calm-hatching-toucan.md`. Key technical debt areas:
+
+1. **Schema leakage**: 8 UI files directly import `packages/daemon/src/schema.ts` - tight coupling
+2. **Duplicate schemas**: `FileStatusValueSchema` defined in both `schema.ts` and `status-parser.ts`
+3. **Hardcoded tools**: Tool names scattered in 3 locations (server.ts, mockSessions.ts, constants.ts)
+4. **Empty catches**: 18 empty catch blocks swallow errors silently (kitty-setup.ts, git.ts, pty.ts)
+
+Technical debt score: MANAGEABLE. No circular dependencies. Codebase is healthy with specific improvement areas.
