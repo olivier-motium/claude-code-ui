@@ -1,0 +1,60 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
+    "MAX_THINKING_TOKENS": "31999"
+  },
+  "alwaysThinkingEnabled": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'MANDATORY: Use ultrathink for all tasks. Before executing ANY user request, you MUST use the Read tool to read these files IN ORDER: (1) docs/index.md - project documentation hub with architecture links (2) CLAUDE.md - coding standards you MUST follow (3) .claude/MEMORIES.md - prior session context. DO NOT skip this step. DO NOT summarize from memory. Actually READ the files. The user expects informed responses based on current project state, not generic assistance.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/status-stop.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/stop-validator.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/status-working.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/read-docs-trigger.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

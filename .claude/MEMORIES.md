@@ -127,6 +127,26 @@ Sessions can have thousands of log entries over time. Without trimming, memory g
 ### StreamDB Corruption Recovery
 If durable-streams client shows `Symbol(liveQueryInternal)` errors, the stream data may be corrupted. Fix: backup and clear `~/.claude-code-ui/streams/`, restart daemon. The stream will rebuild from session files.
 
+### File-Based Status System (Jan 2026)
+Alternative to AI summaries for session status. Claude Code writes status to `.claude/status.md` via hooks, daemon watches and streams to UI.
+
+**Why file-based over AI summaries:**
+- Deterministic: Hooks provide exact paths/templates, model fills slots
+- Scalable: Single file per project, always overwritten (no growth)
+- Reliable: YAML frontmatter parsed deterministically vs LLM variability
+- Cheaper: No API calls for status derivation
+
+**Architecture:**
+- `status-working.py` (UserPromptSubmit hook): Instructs model to write "working" status
+- `status-stop.py` (Stop hook): Instructs model to write completion status
+- `status-watcher.ts`: Watches `.claude/status.md` across projects
+- `status-parser.ts`: Parses YAML frontmatter from status files
+- `fileStatus` field in Session schema takes precedence when present and fresh
+
+**Staleness:** Status files valid for 5 minutes (STATUS_FILE_TTL_MS), then falls back to XState derivation.
+
+**Status taxonomy:** working, waiting_for_approval, waiting_for_input, completed, error, blocked, idle
+
 ## Documentation Audit (Jan 2026)
 
 12 documentation fixes applied:

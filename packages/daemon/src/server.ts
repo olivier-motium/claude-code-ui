@@ -11,7 +11,9 @@ import {
   type RecentOutput,
   type PRInfo,
   type TerminalLink,
+  type FileStatus,
 } from "./schema.js";
+import { StatusWatcher } from "./status-watcher.js";
 import type { SessionState } from "./watcher.js";
 import type { LogEntry } from "./types.js";
 import { generateAISummary, generateGoal } from "./summarizer/index.js";
@@ -46,11 +48,14 @@ export class StreamServer {
   private sessionCache = new Map<string, SessionState>();
   // Terminal link repository for lookups
   private linkRepo: TerminalLinkRepo;
+  // Status watcher for .claude/status.md files
+  private statusWatcher: StatusWatcher;
   // Flag to prevent race conditions during shutdown
   private stopping = false;
 
   constructor(options: StreamServerOptions = {}) {
     this.linkRepo = new TerminalLinkRepo();
+    this.statusWatcher = new StatusWatcher();
     this.port = options.port ?? STREAM_PORT;
     const dataDir = options.dataDir ?? path.join(os.homedir(), ".claude-code-ui", "streams");
 
@@ -61,6 +66,17 @@ export class StreamServer {
     });
 
     this.streamUrl = getStreamUrl(STREAM_HOST, this.port);
+
+    // Handle status file updates
+    this.statusWatcher.on("status", async ({ cwd, status }) => {
+      // Find sessions with this cwd and republish
+      for (const [sessionId, sessionState] of this.sessionCache) {
+        if (sessionState.cwd === cwd) {
+          console.log(`[STATUS] Status update for ${sessionId.slice(0, 8)}: ${status?.status ?? "null"}`);
+          await this.publishSessionWithFileStatus(sessionState, status);
+        }
+      }
+    });
   }
 
   async start(): Promise<void> {
@@ -97,6 +113,7 @@ export class StreamServer {
   async stop(): Promise<void> {
     this.stopping = true;  // Prevent new publishes during shutdown
     stopAllPolling();
+    this.statusWatcher.stop();
     await this.server.stop();
     this.stream = null;
   }
@@ -116,6 +133,9 @@ export class StreamServer {
 
     // Cache session state for PR update callbacks
     this.sessionCache.set(sessionState.sessionId, sessionState);
+
+    // Start watching for status file in this project
+    this.statusWatcher.watchProject(sessionState.cwd);
 
     // Generate AI goal and summary (goals are cached, summaries update more frequently)
     const [goal, summary] = await Promise.all([
@@ -146,6 +166,9 @@ export class StreamServer {
         }
       : null;
 
+    // Get file-based status if available
+    const fileStatus = this.statusWatcher.getStatus(sessionState.cwd);
+
     const session: Session = {
       sessionId: sessionState.sessionId,
       cwd: sessionState.cwd,
@@ -163,6 +186,7 @@ export class StreamServer {
       recentOutput: extractRecentOutput(sessionState.entries),
       pr,
       terminalLink,
+      fileStatus,
     };
 
     // Create the event using the schema helpers
@@ -206,6 +230,9 @@ export class StreamServer {
         }
       : null;
 
+    // Get file-based status if available
+    const fileStatus = this.statusWatcher.getStatus(sessionState.cwd);
+
     const session: Session = {
       sessionId: sessionState.sessionId,
       cwd: sessionState.cwd,
@@ -223,6 +250,61 @@ export class StreamServer {
       recentOutput: extractRecentOutput(sessionState.entries),
       pr,
       terminalLink,
+      fileStatus,
+    };
+
+    const event = sessionsStateSchema.sessions.update({ value: session });
+    await this.stream.append(event);
+  }
+
+  /**
+   * Publish session with updated file status (called from status watcher callback)
+   */
+  async publishSessionWithFileStatus(sessionState: SessionState, fileStatus: FileStatus | null): Promise<void> {
+    // Skip publishing during shutdown or if stream is not ready
+    if (this.stopping || !this.stream) {
+      return;
+    }
+
+    // Generate AI goal and summary
+    const [goal, summary] = await Promise.all([
+      generateGoal(sessionState),
+      generateAISummary(sessionState),
+    ]);
+
+    // Get terminal link if it exists
+    const link = this.linkRepo.get(sessionState.sessionId);
+    const terminalLink = link
+      ? {
+          kittyWindowId: link.kittyWindowId,
+          linkedAt: link.linkedAt,
+          stale: link.stale,
+        }
+      : null;
+
+    // Get cached PR info if available
+    const pr = sessionState.gitBranch
+      ? getCachedPR(sessionState.cwd, sessionState.gitBranch)
+      : null;
+
+    const session: Session = {
+      sessionId: sessionState.sessionId,
+      cwd: sessionState.cwd,
+      gitBranch: sessionState.gitBranch,
+      gitRepoUrl: sessionState.gitRepoUrl,
+      gitRepoId: sessionState.gitRepoId,
+      originalPrompt: sessionState.originalPrompt,
+      status: sessionState.status.status,
+      lastActivityAt: sessionState.status.lastActivityAt,
+      messageCount: sessionState.status.messageCount,
+      hasPendingToolUse: sessionState.status.hasPendingToolUse,
+      pendingTool: extractPendingTool(sessionState),
+      goal,
+      summary,
+      recentOutput: extractRecentOutput(sessionState.entries),
+      pr,
+      terminalLink,
+      fileStatus,
     };
 
     const event = sessionsStateSchema.sessions.update({ value: session });
@@ -258,6 +340,9 @@ export class StreamServer {
       ? getCachedPR(sessionState.cwd, sessionState.gitBranch)
       : null;
 
+    // Get file-based status if available
+    const fileStatus = this.statusWatcher.getStatus(sessionState.cwd);
+
     const session: Session = {
       sessionId: sessionState.sessionId,
       cwd: sessionState.cwd,
@@ -275,6 +360,7 @@ export class StreamServer {
       recentOutput: extractRecentOutput(sessionState.entries),
       pr,
       terminalLink,
+      fileStatus,
     };
 
     const event = sessionsStateSchema.sessions.update({ value: session });

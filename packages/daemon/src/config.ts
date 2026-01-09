@@ -205,3 +205,16 @@ export const SUMMARY_MAX_TOKENS = 100;
 
 /** Maximum tokens for goal generation */
 export const GOAL_MAX_TOKENS = 30;
+
+// =============================================================================
+// File-Based Status Configuration
+// =============================================================================
+
+/** TTL for file-based status (5 minutes, same as IDLE_TIMEOUT_MS) */
+export const STATUS_FILE_TTL_MS = 5 * 60 * 1000;
+
+/** Filename for project status file */
+export const STATUS_FILENAME = "status.md";
+
+/** Directory containing status file */
+export const STATUS_DIR = ".claude";

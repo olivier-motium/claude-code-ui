@@ -46,6 +46,28 @@ export const TerminalLinkSchema = z.object({
 });
 export type TerminalLink = z.infer<typeof TerminalLinkSchema>;
 
+// File-based status (from .claude/status.md)
+export const FileStatusValueSchema = z.enum([
+  "working",
+  "waiting_for_approval",
+  "waiting_for_input",
+  "completed",
+  "error",
+  "blocked",
+  "idle",
+]);
+export type FileStatusValue = z.infer<typeof FileStatusValueSchema>;
+
+export const FileStatusSchema = z.object({
+  status: FileStatusValueSchema,
+  updated: z.string(), // ISO timestamp
+  task: z.string().optional(),
+  summary: z.string().optional(),
+  blockers: z.string().optional(),
+  nextSteps: z.string().optional(),
+});
+export type FileStatus = z.infer<typeof FileStatusSchema>;
+
 // Main session state schema
 export const SessionSchema = z.object({
   sessionId: z.string(),
@@ -64,6 +86,7 @@ export const SessionSchema = z.object({
   recentOutput: z.array(RecentOutputSchema), // Last few messages for live view
   pr: PRInfoSchema.nullable(), // Associated PR if branch has one
   terminalLink: TerminalLinkSchema.nullable(), // Linked kitty terminal window
+  fileStatus: FileStatusSchema.nullable(), // File-based status from .claude/status.md
 });
 export type Session = z.infer<typeof SessionSchema>;
 

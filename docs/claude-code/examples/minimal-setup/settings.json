@@ -1,0 +1,31 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
+    "MAX_THINKING_TOKENS": "31999"
+  },
+  "alwaysThinkingEnabled": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'MANDATORY: Before executing ANY user request, you MUST read the project documentation. Look for: (1) docs/index.md or README.md (2) CLAUDE.md if it exists (3) .claude/MEMORIES.md if it exists. DO NOT skip this step.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/stop-validator.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
